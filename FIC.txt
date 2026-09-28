@@ -1,0 +1,2851 @@
+===== FILE: package.json =====
+{
+  "name": "finsight-x",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "vite": "^5.4.0"
+  }
+}
+===== FILE: vite.config.js =====
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+});
+===== FILE: tailwind.config.js =====
+/** @type {import('tailwindcss').Config} */
+import defaultTheme from "tailwindcss/defaultTheme";
+
+export default {
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  theme: {
+    extend: {
+      colors: {
+        navy: {
+          50: "#F0F4FA", 100: "#DCE6F5", 200: "#B9CCEA", 300: "#8FA9D8",
+          400: "#5B7DBE", 500: "#3A5CA0", 600: "#2C4680", 700: "#223763",
+          800: "#182A4C", 900: "#0F1D38", 950: "#0A1428",
+        },
+        gold: {
+          50: "#FBF7EA", 100: "#F5ECCB", 200: "#EBD795", 300: "#E0C05F",
+          400: "#D4AC3B", 500: "#C9A227", 600: "#A98620", 700: "#866A1A",
+          800: "#644F13", 900: "#43360D",
+        },
+      },
+      fontFamily: { sans: ["Inter", ...defaultTheme.fontFamily.sans] },
+    },
+  },
+  plugins: [],
+};
+===== FILE: postcss.config.js =====
+export default { plugins: { tailwindcss: {}, autoprefixer: {} } };
+===== FILE: index.html =====
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinSight X — Financial Intelligence Platform</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+===== FILE: .gitignore =====
+node_modules
+dist
+===== FILE: src/main.jsx =====
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+===== FILE: src/index.css =====
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-slate-100 text-slate-800 antialiased; }
+}
+
+@layer components {
+  .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+  .card-hover { @apply transition duration-150 hover:border-slate-300 hover:shadow-md; }
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold; }
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold transition duration-150; }
+  .btn-gold { @apply bg-gold-500 text-navy-950 hover:bg-gold-400; }
+  .btn-navy { @apply bg-navy-900 text-white hover:bg-navy-800; }
+  .btn-outline { @apply border border-slate-300 bg-white text-slate-700 hover:border-navy-300 hover:text-navy-800; }
+  .label { @apply text-[11px] font-semibold uppercase tracking-wider text-slate-500; }
+  .input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-navy-500 focus:outline-none focus:ring-2 focus:ring-navy-500/20; }
+}
+
+.nice-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.nice-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 8px; }
+.dark-scroll::-webkit-scrollbar { width: 8px; }
+.dark-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
+
+@keyframes conn {
+  0% { top: 0; opacity: 0; } 15% { opacity: 1; }
+  85% { opacity: 1; } 100% { top: calc(100% - 6px); opacity: 0; }
+}
+.connector-dot {
+  position: absolute; left: 50%; top: 0; width: 6px; height: 6px;
+  margin-left: -3px; border-radius: 9999px;
+  animation: conn 1.8s linear infinite;
+}
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp .3s ease-out both; }
+
+@keyframes thinking { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.think-dot { animation: thinking 1.2s infinite; }
+===== FILE: src/App.jsx =====
+import { useState } from "react";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AppProvider } from "./hooks/useAppState";
+import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
+import EvidencePanel from "./components/EvidencePanel";
+import { DisclaimerBar } from "./components/ui";
+import Dashboard from "./pages/Dashboard";
+import Reports from "./pages/Reports";
+import Signals from "./pages/Signals";
+import ChangeIntelligence from "./pages/ChangeIntelligence";
+import RiskIntelligence from "./pages/RiskIntelligence";
+import Auditor from "./pages/Auditor";
+import AskReport from "./pages/AskReport";
+import Evidence from "./pages/Evidence";
+import AuditLog from "./pages/AuditLog";
+import Settings from "./pages/Settings";
+import Upload from "./pages/Upload";
+
+export default function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <AppProvider>
+      <HashRouter>
+        <div className="min-h-screen">
+          <div className="flex">
+            <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <div className="min-w-0 flex-1">
+              <Topbar onMenu={() => setSidebarOpen(true)} />
+              <main className="mx-auto max-w-7xl px-4 py-6 pb-16 lg:px-8">
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/signals" element={<Signals />} />
+                  <Route path="/change" element={<ChangeIntelligence />} />
+                  <Route path="/risk" element={<RiskIntelligence />} />
+                  <Route path="/auditor" element={<Auditor />} />
+                  <Route path="/ask" element={<AskReport />} />
+                  <Route path="/evidence" element={<Evidence />} />
+                  <Route path="/audit-log" element={<AuditLog />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/upload" element={<Upload />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </main>
+            </div>
+          </div>
+          <EvidencePanel />
+          <DisclaimerBar />
+        </div>
+      </HashRouter>
+    </AppProvider>
+  );
+}
+===== FILE: src/utils/format.js =====
+export const fmtInt = (n) => n.toLocaleString("en-IN");
+export const signed = (n) => `${n > 0 ? "+" : n < 0 ? "-" : ""}${Math.abs(n)}`;
+export const moneyCr = (n) => `₹${n} Cr`;
+===== FILE: src/utils/analysis.js =====
+export const pctChange = (prev, curr) => Math.round(((curr - prev) / prev) * 1000) / 10;
+
+export const isMaterial = (deltaPct, threshold = 15) => Math.abs(deltaPct) > threshold;
+
+export function classify(deltaPct, goodWhenUp = true) {
+  const up = deltaPct >= 0;
+  const good = up ? goodWhenUp : !goodWhenUp;
+  return { up, good, tone: good ? "good" : "bad", color: good ? "text-emerald-600" : "text-rose-600" };
+}
+===== FILE: src/data/mockData.js =====
+export const COMPANY = { name: "ABC Corporation", ticker: "ABC", sector: "Diversified Manufacturing" };
+export const PERIODS = { current: "Q2 FY2026", previous: "Q1 FY2026" };
+
+export const DISCLAIMER =
+  "Analytical support only. FinSight X does not predict stock prices, issue buy/sell recommendations, approve loans, or allege fraud.";
+
+export const HISTORY = {
+  labels: ["Q1 FY25", "Q2 FY25", "Q3 FY25", "Q4 FY25", "Q1 FY26", "Q2 FY26"],
+  revenue: [610, 655, 690, 720, 800, 920],
+  netProfit: [84, 88, 92, 95, 90, 72],
+  debt: [120, 135, 150, 168, 200, 260],
+  cashFlow: [96, 104, 110, 116, 118, 76],
+  eps: [10.2, 10.6, 11.1, 11.6, 12.5, 9.8],
+  expenses: [488, 519, 545, 565, 645, 786],
+};
+
+export const DASH_KPIS = [
+  { key: "revenue", label: "Revenue", value: "₹920 Cr", delta: 15, goodWhenUp: true, icon: "trending-up", sub: "vs Q1 FY2026", to: "/change", spark: HISTORY.revenue },
+  { key: "profit", label: "Net Profit", value: "₹72 Cr", delta: -20, goodWhenUp: true, icon: "trending-down", sub: "net margin 7.8%", to: "/change", spark: HISTORY.netProfit },
+  { key: "debt", label: "Debt", value: "₹260 Cr", delta: 30, goodWhenUp: false, icon: "scale", sub: "ND/EBITDA 2.4x", to: "/change", spark: HISTORY.debt },
+  { key: "cash", label: "Operating Cash Flow", value: "₹76 Cr", delta: -36, goodWhenUp: true, icon: "database", sub: "cash conversion 61%", to: "/change", spark: HISTORY.cashFlow },
+  { key: "fidelity", label: "Fidelity Score", value: "94%", delta: null, icon: "shield-check", sub: "auditor-verified", to: "/auditor" },
+  { key: "tokens", label: "Token Savings", value: "68%", delta: null, icon: "layers", sub: "at 75% compression", to: "/reports" },
+  { key: "signals", label: "Significant Signals", value: "7", delta: null, icon: "zap", sub: "4 risk-direction", to: "/signals" },
+  { key: "risk", label: "Risk Signals", value: "4", delta: null, icon: "alert-triangle", sub: "2 high priority", to: "/risk" },
+];
+
+export const SUMMARY = [
+  { label: "REPORTED FACT", tone: "navy", icon: "file",
+    text: "Revenue increased by 15% QoQ (₹800 Cr → ₹920 Cr), driven by domestic infrastructure demand and execution of new European orders.",
+    page: 8, evidenceId: "EV-P08" },
+  { label: "AI ANALYSIS", tone: "gold", icon: "cpu",
+    text: "Top-line performance improved compared with the previous quarter. However, expense growth (21.9%) outpaced revenue growth, gross margin compressed ~180 bps, and borrowings rose 30% to fund expansion capex.",
+    page: 12, evidenceId: "EV-P12" },
+  { label: "POTENTIAL SIGNIFICANCE", tone: "amber", icon: "target",
+    text: "Growth combined with margin pressure and rising leverage may be relevant to future financial assessment — particularly covenant headroom and cash-conversion quality in H2 FY2026.",
+    page: 32, evidenceId: "EV-P32" },
+];
+
+export const CHANGES = [
+  { key: "revenue", label: "Revenue", unit: "Cr", prev: 800, curr: 920,
+    explanation: "Volume growth in the domestic infrastructure segment (+₹88 Cr) plus execution of new European orders (+₹32 Cr). Growth is real, but the mix is margin-dilutive.",
+    evidenceId: "EV-P08" },
+  { key: "netProfit", label: "Net Profit", unit: "Cr", prev: 90, curr: 72,
+    explanation: "Profit fell despite revenue growth: input-cost inflation compressed gross margin ~180 bps and interest expense rose with new borrowings.",
+    evidenceId: "EV-P12" },
+  { key: "debt", label: "Debt", unit: "Cr", prev: 200, curr: 260,
+    explanation: "₹60 Cr drawn for the Phase II capacity expansion; net debt/EBITDA moved 1.8x → 2.4x. Covenant headroom narrows but remains compliant.",
+    evidenceId: "EV-P32" },
+  { key: "cashFlow", label: "Operating Cash Flow", unit: "Cr", prev: 118, curr: 76,
+    explanation: "Operating cash conversion weakened: receivables +₹54 Cr and inventory build +₹38 Cr absorbed cash despite higher accrual profit.",
+    evidenceId: "EV-P18" },
+  { key: "eps", label: "EPS", unit: "₹", prev: 12.5, curr: 9.8,
+    explanation: "Tracks the net-profit decline; no buyback or share-count change offset the fall.",
+    evidenceId: "EV-P14" },
+  { key: "expenses", label: "Expenses", unit: "Cr", prev: 645, curr: 786,
+    explanation: "Raw-material inflation (+14%) and higher freight, partly offset by the productivity program. Expense growth (21.9%) outpaced revenue growth (15%).",
+    evidenceId: "EV-P15" },
+];
+
+export const SIGNALS = [
+  { id: "SIG-01", title: "Export demand outlook weakened", category: "risk", severity: "high",
+    metric: "Export order intake", delta: "-22% QoQ", confidence: 91, page: 27, source: "Q2 Earnings Call Transcript",
+    summary: "Management guided to weaker export demand over the next two quarters.",
+    aiAnalysis: "Exports contributed 31% of Q2 revenue. A two-quarter soft patch removes the growth tailwind that supported H1 execution.",
+    significance: "Possible revenue pressure in H2 FY2026; monitor order-book conversion and pricing.",
+    chainId: "RC-A", evidenceId: "EV-P27" },
+  { id: "SIG-02", title: "Debt increased 30% QoQ", category: "risk", severity: "high",
+    metric: "Total borrowings", delta: "+30% QoQ", confidence: 95, page: 32, source: "Q2 Financial Report",
+    summary: "Gross debt rose ₹200 Cr → ₹260 Cr to fund the Phase II capacity expansion.",
+    aiAnalysis: "Leverage is rising faster than EBITDA; net debt/EBITDA moved 1.8x → 2.4x.",
+    significance: "Higher financing burden; covenant headroom narrows and deserves review.",
+    chainId: "RC-B", evidenceId: "EV-P32" },
+  { id: "SIG-03", title: "Profit declined despite revenue growth", category: "risk", severity: "medium",
+    metric: "Net profit", delta: "-20% QoQ", confidence: 88, page: 12, source: "Q2 Financial Report",
+    summary: "Net profit fell ₹90 Cr → ₹72 Cr while revenue grew 15%.",
+    aiAnalysis: "Input-cost inflation compressed gross margin ~180 bps and finance costs rose with new borrowings.",
+    significance: "If the cost mix persists, FY2026 margin guidance is at risk.",
+    evidenceId: "EV-P12" },
+  { id: "SIG-04", title: "Operating cash flow fell 36%", category: "risk", severity: "high",
+    metric: "Operating cash flow", delta: "-36% QoQ", confidence: 90, page: 18, source: "Q2 Financial Report",
+    summary: "Cash conversion weakened as receivables (+₹54 Cr) and inventory (+₹38 Cr) absorbed cash.",
+    aiAnalysis: "Accrual profit and cash profit are diverging — a quality-of-earnings indicator worth review; receivable days rose 74 → 92.",
+    significance: "Monitor receivable ageing and inventory turn in the next filing.",
+    evidenceId: "EV-P18" },
+  { id: "SIG-05", title: "Revenue grew 15% QoQ", category: "positive", severity: "low",
+    metric: "Revenue", delta: "+15% QoQ", confidence: 97, page: 8, source: "Q2 Financial Report",
+    summary: "₹800 Cr → ₹920 Cr, led by domestic infrastructure and European execution.",
+    aiAnalysis: "Growth is broad-based across two segments rather than a single one-off contract.",
+    significance: "Supports FY growth guidance if the order book converts on schedule.",
+    evidenceId: "EV-P08" },
+  { id: "SIG-06", title: "New European orders of ₹140 Cr", category: "positive", severity: "low",
+    metric: "Order book", delta: "+₹140 Cr QoQ", confidence: 85, page: 21, source: "Q2 Financial Report",
+    summary: "Total order book stands at ₹610 Cr after new export wins.",
+    aiAnalysis: "Adds revenue visibility for H2; timing of conversion matters for cash flow.",
+    significance: "Positive counterweight to export-demand softness — track the conversion rate.",
+    evidenceId: "EV-P21" },
+  { id: "SIG-07", title: "Dividend maintained despite profit decline", category: "info", severity: "low",
+    metric: "Interim dividend", delta: "₹4/share · unchanged", confidence: 80, page: 38, source: "Q2 Financial Report",
+    summary: "The Board kept the interim dividend flat even as profit declined 20%.",
+    aiAnalysis: "Payout ratio rises from 33% to 42% — a board-confidence signal, but it competes with deleveraging priorities.",
+    significance: "Informational: weigh the capital-allocation signal against the rising leverage path.",
+    evidenceId: "EV-P38" },
+];
+
+export const ALERTS = [
+  { id: "AL-01", priority: "HIGH", title: "Export demand outlook weakened",
+    why: "Management expects weaker export demand over the next two quarters (export order intake −22% QoQ).",
+    impact: "Possible future revenue pressure — exports are 31% of revenue.",
+    signalId: "SIG-01", evidenceId: "EV-P27" },
+  { id: "AL-02", priority: "HIGH", title: "Debt increased 30% QoQ",
+    why: "Debt rose from ₹200 Cr to ₹260 Cr to fund the Phase II capacity expansion.",
+    impact: "Higher financing burden may require review of covenant headroom.",
+    signalId: "SIG-02", evidenceId: "EV-P32" },
+  { id: "AL-03", priority: "HIGH", title: "Cash flow diverging from reported profit",
+    why: "Operating cash flow fell 36% while profit fell 20% — receivables and inventory absorbed cash.",
+    impact: "Quality-of-earnings question for Q2; monitor receivable ageing.",
+    signalId: "SIG-04", evidenceId: "EV-P18" },
+  { id: "AL-04", priority: "MEDIUM", title: "Management statement vs debt data",
+    why: "\u201COur debt position remains stable\u201D vs a +30% QoQ movement in reported borrowings.",
+    impact: "Narrative–data gap; requires analyst review before relying on the guidance language.",
+    signalId: null, evidenceId: "EV-SC01" },
+];
+
+export const RISK_CHAINS = [
+  { id: "RC-A", name: "Demand → Liquidity pathway", trigger: "Export demand decline",
+    nodes: [
+      { id: "RC-A1", level: 1, title: "Export Demand ↓", sev: "amber", evidenceId: "EV-P27", source: "Q2 Earnings Call",
+        trigger: "Management guided weaker export demand for the next two quarters; order intake −22% QoQ.",
+        aiAnalysis: "Forward-looking demand signal from management commentary — not yet fully reflected in reported numbers." },
+      { id: "RC-A2", level: 2, title: "Sales Pressure", sev: "amber", evidenceId: "EV-P27", source: "Q2 Earnings Call",
+        trigger: "Export pipeline conversion slows over the next two quarters.",
+        aiAnalysis: "31% of revenue is export-linked, so softness translates directly into volume pressure." },
+      { id: "RC-A3", level: 3, title: "Revenue Growth Risk", sev: "amber", evidenceId: "EV-P08", source: "Q2 Financial Report",
+        trigger: "H2 export volumes land below plan.",
+        aiAnalysis: "Q2 growth relied partly on export execution; a slowdown removes that tailwind while domestic mix dilutes margin." },
+      { id: "RC-A4", level: 4, title: "Cash Flow Pressure", sev: "rose", evidenceId: "EV-P18", source: "Q2 Financial Report",
+        trigger: "Receivables stretch as shipments and terms extend.",
+        aiAnalysis: "Cash conversion already weakened this quarter (−36%); receivable days rose 74 → 92." },
+      { id: "RC-A5", level: 5, title: "Financial Risk", sev: "rose", evidenceId: "EV-P32", source: "Q2 Financial Report",
+        trigger: "Liquidity buffer narrows while leverage rises.",
+        aiAnalysis: "Combines with +30% debt to concentrate balance-sheet risk. Terminal node of this exposure pathway." },
+    ] },
+  { id: "RC-B", name: "Leverage → Profitability pathway", trigger: "Debt increase",
+    nodes: [
+      { id: "RC-B1", level: 1, title: "Debt ↑", sev: "amber", evidenceId: "EV-P32", source: "Q2 Financial Report",
+        trigger: "Gross debt ₹200 Cr → ₹260 Cr (+30%) to fund Phase II capex.",
+        aiAnalysis: "Leverage is rising faster than EBITDA; ND/EBITDA 1.8x → 2.4x." },
+      { id: "RC-B2", level: 2, title: "Interest Burden ↑", sev: "amber", evidenceId: "EV-P12", source: "Q2 Financial Report",
+        trigger: "Finance cost +₹6.2 Cr QoQ on incremental drawdown.",
+        aiAnalysis: "Higher rates on new borrowings feed the P&L before operating leverage can offset them." },
+      { id: "RC-B3", level: 3, title: "Profit Margin Pressure", sev: "amber", evidenceId: "EV-P12", source: "Q2 Financial Report",
+        trigger: "Net margin 11.3% → 7.8%.",
+        aiAnalysis: "Input-cost inflation and the interest burden compound at the net line." },
+      { id: "RC-B4", level: 4, title: "Profitability Risk", sev: "rose", evidenceId: "EV-P32", source: "Q2 Financial Report",
+        trigger: "If capex ramps slower than plan, returns dilute before debt reduces.",
+        aiAnalysis: "Terminal node: monitor capex milestones against the debt-service schedule." },
+    ] },
+];
+
+export const STATEMENT_CHECKS = [
+  { id: "SC-01", statement: "“Our debt position remains stable.”", speaker: "CFO · Q2 Earnings Call",
+    rows: [["Q1 Debt", "₹200 Cr"], ["Q2 Debt", "₹260 Cr"], ["Change", "+30%"]],
+    status: "inconsistent", verdict: "⚠ Potential Inconsistency",
+    note: "Reported borrowings moved materially QoQ. The statement may reference a net-debt or covenant basis — flagged for analyst review, not as a conclusion.",
+    evidenceId: "EV-SC01" },
+  { id: "SC-02", statement: "“Working capital is well under control.”", speaker: "CFO · Q2 Earnings Call",
+    rows: [["Receivable days", "74 → 92"], ["Receivables Δ", "+₹54 Cr"], ["Inventory Δ", "+₹38 Cr"]],
+    status: "inconsistent", verdict: "⚠ Potential Inconsistency",
+    note: "Working-capital metrics deteriorated this quarter. Management attributed this to extended terms on two contracts — verify against contract disclosures.",
+    evidenceId: "EV-SC02" },
+  { id: "SC-03", statement: "“Domestic volume growth drove the quarter.”", speaker: "MD · Q2 Earnings Call",
+    rows: [["Domestic revenue Δ", "+19%"], ["Export revenue Δ", "+7%"], ["Domestic mix", "51% → 54%"]],
+    status: "consistent", verdict: "✓ Consistent with data",
+    note: "Statement is supported by reported segment data.",
+    evidenceId: "EV-P08" },
+];
+
+export const COMPRESSION_LEVELS = [
+  { id: "c60", label: "60% Compression", originalTokens: 20000, compressedTokens: 8000, savings: 60, fidelity: 97, status: "passed", degraded: 0,
+    preserved: "All 12 decision-relevant points preserved with original phrasing.",
+    omitted: "Boilerplate, legal annexures and repeated disclaimers only." },
+  { id: "c75", label: "75% Compression", originalTokens: 20000, compressedTokens: 6400, savings: 68, fidelity: 94, status: "passed", degraded: 0,
+    preserved: "11 of 12 decision-relevant points preserved; 1 paraphrased with identical direction.",
+    omitted: "Repetitive segment commentary condensed.", note: "Recommended default — best balance of savings and fidelity for analyst review." },
+  { id: "c90", label: "90% Compression", originalTokens: 20000, compressedTokens: 2000, savings: 90, fidelity: 78, status: "warning", degraded: 3,
+    preserved: "9 of 12 decision-relevant points preserved.",
+    omitted: "Two risk-relevant passages partially omitted; one paraphrased direction-neutral." },
+];
+
+export const AUDIT = {
+  originalSignal: -3, summarySignal: -3, fidelity: 94, status: "passed",
+  statement: "Decision-relevant information was preserved in the compressed summary.",
+  checked: 15, aligned: 14, paraphrased: 1,
+  drift: {
+    originalQuote: "Export demand is expected to remain weak over the next two quarters; export order intake declined about 22% quarter-on-quarter.",
+    faithfulSummary: "Management guided to weaker export demand for two quarters (order intake −22% QoQ).",
+    driftedSummary: "Export outlook remains constructive; management is monitoring demand closely.",
+    originalSignal: -3, summarySignal: 1, fidelity: 61,
+    driftNote: "Signal direction inverted: the source indicates deteriorating export demand; the drifted summary reads as neutral-positive.",
+    corrected: { summarySignal: -3, fidelity: 95,
+      statement: "Self-correction reinstated the omitted deterioration signal from source chunks (p.27); the re-audit passed with improved fidelity." },
+  },
+  workflow: ["Original Report", "AI Summary", "Auditor Agent", "Fidelity Score", "Mismatch?", "Self-Correction", "Re-Audit"],
+  workflowDesc: [
+    "148 pages · 20,000 tokens ingested",
+    "Compressed to 6,400 tokens at 75%",
+    "Independent agent re-reads all source chunks",
+    "Point-by-point alignment scoring",
+    "Compare signal direction & magnitude",
+    "Drifted summary regenerated from evidence",
+    "Fresh alignment pass → new fidelity score",
+  ],
+};
+
+export const EVIDENCE = {
+  "EV-P08": { id: "EV-P08", signal: "Revenue increased 15% QoQ", document: "Q2 Financial Report", type: "Filing", page: 8,
+    quote: "Revenue from operations for the quarter ended September 30, 2025 stood at ₹920 Cr, an increase of 15.0% over the previous quarter, driven by domestic infrastructure demand and execution of new European orders.",
+    interpretation: "Growth is broad-based across two segments rather than a single one-off; the mix has shifted toward lower-margin domestic infra volume." },
+  "EV-P12": { id: "EV-P12", signal: "Net profit declined 20% QoQ", document: "Q2 Financial Report", type: "Filing", page: 12,
+    quote: "Net profit for the quarter was ₹72 Cr (Q1: ₹90 Cr), reflecting higher input costs and increased finance costs during the period.",
+    interpretation: "Margin compression plus rising interest outgo explain the fall despite 15% revenue growth." },
+  "EV-P14": { id: "EV-P14", signal: "EPS declined to ₹9.80", document: "Q2 Financial Report", type: "Filing", page: 14,
+    quote: "Earnings per share (basic) was ₹9.80 for the quarter (Q1: ₹12.50).",
+    interpretation: "Share count unchanged — the EPS move is fully attributable to the profit decline." },
+  "EV-P15": { id: "EV-P15", signal: "Expenses grew 21.9% QoQ", document: "Q2 Financial Report", type: "Filing", page: 15,
+    quote: "Total expenses rose to ₹786 Cr (Q1: ₹645 Cr), primarily on account of a 14% increase in raw material costs and higher freight outlay.",
+    interpretation: "Expense growth outpacing revenue growth is the primary driver of margin compression." },
+  "EV-P18": { id: "EV-P18", signal: "Operating cash flow fell 36% QoQ", document: "Q2 Financial Report", type: "Filing", page: 18,
+    quote: "Net cash generated from operating activities was ₹76 Cr (Q1: ₹118 Cr), primarily due to an increase in trade receivables of ₹54 Cr and inventory of ₹38 Cr.",
+    interpretation: "Working capital absorbed cash — a quality-of-earnings divergence from accrual profit." },
+  "EV-P21": { id: "EV-P21", signal: "New European orders of ₹140 Cr", document: "Q2 Financial Report", type: "Filing", page: 21,
+    quote: "The company secured new export orders of ₹140 Cr during the quarter, taking the total order book to ₹610 Cr.",
+    interpretation: "Adds H2 revenue visibility; conversion timing matters for cash flow." },
+  "EV-P27": { id: "EV-P27", signal: "Export demand outlook weakened", document: "Q2 Earnings Call Transcript", type: "Transcript", page: 27,
+    quote: "While domestic demand remains healthy, we expect export demand to stay weak over the next two quarters; export order intake declined about 22% quarter-on-quarter.",
+    interpretation: "Explicit forward-looking deterioration guidance from management — triggers early-warning alert AL-01." },
+  "EV-P32": { id: "EV-P32", signal: "Debt increased 30% QoQ", document: "Q2 Financial Report", type: "Filing", page: 32,
+    quote: "Total borrowings increased to ₹260 Cr as of September 30, 2025 (June 30, 2025: ₹200 Cr), drawn to fund the Phase II capacity expansion.",
+    interpretation: "Debt funds capex, not operations; leverage rises faster than EBITDA (ND/EBITDA 1.8x → 2.4x)." },
+  "EV-P34": { id: "EV-P34", signal: "Receivable days 74 → 92", document: "Q2 Financial Report", type: "Filing", page: 34,
+    quote: "Trade receivables days increased from 74 days to 92 days; management attributed the increase to extended credit terms in two large infrastructure contracts.",
+    interpretation: "Terms-driven working-capital absorption; verify against contract disclosures." },
+  "EV-P38": { id: "EV-P38", signal: "Interim dividend maintained at ₹4/share", document: "Q2 Financial Report", type: "Filing", page: 38,
+    quote: "The Board has declared an interim dividend of ₹4 per share, unchanged from the previous quarter.",
+    interpretation: "Payout ratio rises 33% → 42% — a capital-allocation signal to weigh against the leverage path." },
+  "EV-SC01": { id: "EV-SC01", signal: "Statement–data check SC-01: debt stability claim", document: "Q2 Earnings Call Transcript", type: "Cross-check", page: 32,
+    quote: "Statement (call): “Our debt position remains stable.” · Reported data (filing, p.32): total borrowings ₹200 Cr → ₹260 Cr (+30%) QoQ.",
+    interpretation: "The statement may refer to a net-debt or covenant basis rather than gross borrowings. Flagged as a potential inconsistency for analyst review — no conclusion on intent." },
+  "EV-SC02": { id: "EV-SC02", signal: "Statement–data check SC-02: working-capital claim", document: "Q2 Earnings Call Transcript", type: "Cross-check", page: 34,
+    quote: "Statement (call): “Working capital is well under control.” · Reported data (filing, p.34): receivable days 74 → 92; receivables +₹54 Cr; inventory +₹38 Cr.",
+    interpretation: "Working-capital metrics deteriorated this quarter. Potential inconsistency — management's contract-terms explanation should be verified." },
+};
+
+export const AUDIT_LOG = [
+  { t: "09:41:02", agent: "Ingestion Agent", action: "Document ingested", status: "ok", detail: "Q2_FY2026_Report.pdf · 148 pages · 4.2 MB" },
+  { t: "09:41:20", agent: "Extraction Agent", action: "Financial data mapped", status: "ok", detail: "6 metrics · 14 tables · 312 chunks created" },
+  { t: "09:42:05", agent: "Compression Agent", action: "Summary generated (75%)", status: "ok", detail: "20,000 → 6,400 tokens · 68% saved" },
+  { t: "09:43:11", agent: "Auditor Agent", action: "Alignment audit", status: "ok", detail: "14/15 points aligned · 1 paraphrased · fidelity 94%" },
+  { t: "09:43:13", agent: "Change Detector", action: "Revenue Δ +15% vs Q1", status: "info", detail: "At materiality threshold — logged, not flagged" },
+  { t: "09:43:14", agent: "Change Detector", action: "Debt Δ +30% vs Q1", status: "flagged", detail: "Exceeds ±15% materiality threshold" },
+  { t: "09:43:15", agent: "Change Detector", action: "Operating cash flow Δ −36% vs Q1", status: "flagged", detail: "Exceeds ±15% materiality threshold" },
+  { t: "09:44:47", agent: "Signal Agent", action: "SIG-04 created", status: "ok", detail: "Cash-flow divergence · confidence 90%" },
+  { t: "09:45:02", agent: "Risk Agent", action: "Chain RC-A linked", status: "ok", detail: "5 nodes · Export demand → Financial Risk" },
+  { t: "09:45:30", agent: "Auditor Agent", action: "Statement check SC-01", status: "warning", detail: "Potential inconsistency — requires analyst review" },
+  { t: "10:02:19", agent: "Auditor Agent", action: "Self-correction re-audit", status: "ok", detail: "Summary drift on export-demand signal corrected · fidelity 95%" },
+];
+
+export const REPORTS = [
+  { id: "R1", name: "Q2 FY2026 Financial Report", type: "PDF · Filing", pages: 148, tokens: "20,000", uploaded: "Today · 09:41", status: "Analysis Complete", compression: "75%", fidelity: 94, signals: 7, evidenceId: "EV-P08" },
+  { id: "R2", name: "Q2 FY2026 Earnings Call Transcript", type: "Transcript", pages: 42, tokens: "9,800", uploaded: "Today · 09:44", status: "Analysis Complete", compression: "75%", fidelity: 96, signals: 3, evidenceId: "EV-P27" },
+  { id: "R3", name: "Q1 FY2026 Financial Report", type: "PDF · Filing", pages: 141, tokens: "19,600", uploaded: "12 Jul · 10:02", status: "Archived", compression: "75%", fidelity: 95, signals: 4, evidenceId: null },
+  { id: "R4", name: "Q4 FY2025 Annual Report", type: "PDF · Filing", pages: 210, tokens: "31,200", uploaded: "02 Feb · 11:18", status: "Archived", compression: "70%", fidelity: 93, signals: 5, evidenceId: null },
+];
+
+export const ROLES = {
+  ceo: { key: "ceo", label: "CEO", name: "A. Mehta", initials: "AM", icon: "briefcase",
+    focus: ["Executive summary", "KPIs", "Major changes", "Top alerts", "Trends"] },
+  analyst: { key: "analyst", label: "Credit Analyst", name: "S. Iyer", initials: "SI", icon: "search",
+    focus: ["Full financial analysis", "Financial signals", "Evidence", "Change detection", "AI Auditor", "Ask the Report"] },
+  risk: { key: "risk", label: "Risk Manager", name: "R. Kapoor", initials: "RK", icon: "shield",
+    focus: ["Risk chains", "Early-warning alerts", "Statement–data mismatches", "Audit log", "Evidence"] },
+};
+
+export const NOTIFICATIONS = ALERTS.map((a, i) => ({
+  id: a.id, title: a.title, priority: a.priority,
+  time: ["2m ago", "9m ago", "14m ago", "31m ago"][i], to: "/risk",
+}));
+
+export const PIPELINE_STEPS = [
+  { label: "File validation", desc: "Checking format, integrity and page count", stat: "PDF · 4.2 MB · 148 pages · no corruption" },
+  { label: "Text extraction", desc: "OCR + layout-aware parsing of the document", stat: "148 pages → 61,200 words extracted" },
+  { label: "Financial data extraction", desc: "Mapping statements and notes to metric schemas", stat: "6 metrics · 14 tables mapped" },
+  { label: "Document chunking", desc: "Splitting for retrieval with overlap", stat: "312 chunks (512 tokens · 64 overlap)" },
+  { label: "AI compression", desc: "LLM compression to decision-relevant intelligence", stat: "20,000 → 6,400 tokens (68% saved)" },
+  { label: "Signal detection", desc: "Scanning compressed + source for significant signals", stat: "7 signals · 4 risk-direction" },
+  { label: "Risk analysis", desc: "Linking signals into directional risk chains", stat: "2 chains · 9 nodes linked" },
+  { label: "AI audit", desc: "Independent agent audits summary vs source", stat: "14/15 aligned · audit passed" },
+  { label: "Fidelity calculation", desc: "Scoring information preservation", stat: "94% · above the 90% threshold" },
+  { label: "Change detection", desc: "Q1 → Q2 comparison against materiality threshold", stat: "6 metrics scanned · 5 flagged >±15%" },
+  { label: "Final dashboard", desc: "Publishing alerts, chains and evidence", stat: "Dashboard updated · evidence attached" },
+];
+
+export const SUGGESTED_QUESTIONS = [
+  "Why did profit decrease?",
+  "What changed from Q1 to Q2?",
+  "Why did debt increase?",
+  "What are the major risks?",
+  "What did management say about demand?",
+];
+
+export const QA = [
+  { id: "q1", match: ["profit", "decreas", "declin", "margin", "earnings"],
+    answer: "Net profit fell 20% (₹90 Cr → ₹72 Cr) because margin compression and higher interest cost outweighed 15% revenue growth.",
+    fact: "Revenue +15% but net profit −20% QoQ; expenses grew 21.9%, outpacing revenue.",
+    analysis: "Input-cost inflation compressed gross margin ~180 bps; new borrowings lifted finance costs.",
+    significance: "If the cost mix persists, FY2026 margin guidance is at risk; monitor price increases and productivity savings.",
+    page: 12, evidenceId: "EV-P12" },
+  { id: "q2", match: ["change", "q1", "q2", "compared", "difference", "quarter"],
+    answer: "Four headline changes: Revenue +15% (₹800→920 Cr), Net Profit −20% (₹90→72 Cr), Debt +30% (₹200→260 Cr), Operating Cash Flow −36% (₹118→76 Cr). EPS fell ₹12.50 → ₹9.80.",
+    fact: "All six tracked metrics moved; five exceeded the ±15% materiality threshold.",
+    analysis: "A growth quarter on the top line with deteriorating quality indicators — expenses outgrew revenue and working capital absorbed cash.",
+    significance: "Debt, cash flow and EPS flags point to leverage and earnings-quality review; full detail in Change Intelligence.",
+    page: 8, evidenceId: "EV-P08" },
+  { id: "q3", match: ["debt", "borrow", "leverag", "loan"],
+    answer: "Debt rose ₹60 Cr to ₹260 Cr (+30%) to fund the Phase II capacity expansion; net debt/EBITDA moved from 1.8x to 2.4x.",
+    fact: "Total borrowings ₹200 Cr → ₹260 Cr QoQ (filing, p.32).",
+    analysis: "Debt funds capex rather than operations; covenant headroom narrows but remains compliant.",
+    significance: "Financing burden deserves review; risk chain RC-B maps the leverage → profitability pathway.",
+    page: 32, evidenceId: "EV-P32" },
+  { id: "q4", match: ["risk", "major", "concern", "warning", "flag"],
+    answer: "Four risk-direction signals are active: weakening export demand outlook, debt +30%, cash-flow divergence from profit, and profit decline despite growth. Two risk chains map how they can compound into revenue and profitability risk.",
+    fact: "4 risk signals · 2 high-priority alerts · 2 linked risk chains (9 nodes).",
+    analysis: "The chains converge on liquidity and covenant headroom rather than on any single metric.",
+    significance: "Recommended review order: export demand (p.27) → debt trajectory (p.32) → receivable ageing (p.18).",
+    page: 27, evidenceId: "EV-P27" },
+  { id: "q5", match: ["demand", "management", "export", "call", "guidance", "outlook", "say"],
+    answer: "Management said domestic demand remains healthy but guided that export demand will stay weak for the next two quarters, with export order intake down ~22% QoQ.",
+    fact: "Quote from the Q2 earnings call (transcript p.27): “we expect export demand to stay weak over the next two quarters”.",
+    analysis: "A forward-looking deterioration signal not yet fully visible in reported revenue.",
+    significance: "Triggers early-warning alert AL-01 and anchors risk chain RC-A.",
+    page: 27, evidenceId: "EV-P27" },
+];
+
+const PAGE_INDEX = [
+  ["Dashboard", "/dashboard"], ["Reports", "/reports"], ["Financial Signals", "/signals"],
+  ["Change Intelligence", "/change"], ["Risk Intelligence", "/risk"], ["AI Auditor", "/auditor"],
+  ["Ask the Report", "/ask"], ["Evidence", "/evidence"], ["Audit Log", "/audit-log"],
+  ["Settings", "/settings"], ["New Analysis (Upload)", "/upload"],
+].map(([title, to]) => ({ title, sub: "Page", type: "page", to }));
+
+export const SEARCH_INDEX = [
+  ...PAGE_INDEX,
+  ...SIGNALS.map((s) => ({ title: s.title, sub: `Signal · ${s.metric} · p.${s.page}`, type: "signal", to: "/signals" })),
+  ...ALERTS.map((a) => ({ title: a.title, sub: `Alert · ${a.priority} priority`, type: "alert", to: "/risk" })),
+  ...Object.values(EVIDENCE).map((e) => ({ title: e.signal, sub: `Evidence · ${e.document} · p.${e.page}`, type: "evidence", to: "/evidence" })),
+];
+===== FILE: src/services/analysisService.js =====
+import {
+  COMPANY, PERIODS, DASH_KPIS, SUMMARY, CHANGES, SIGNALS, ALERTS, RISK_CHAINS,
+  STATEMENT_CHECKS, COMPRESSION_LEVELS, AUDIT, EVIDENCE, AUDIT_LOG, REPORTS,
+  QA, SUGGESTED_QUESTIONS,
+} from "../data/mockData";
+
+export const service = {
+  getCompanyContext: () => ({ company: COMPANY, period: PERIODS }),
+  getKpis: () => DASH_KPIS,
+  getSummary: () => SUMMARY,
+  getChanges: () => CHANGES,
+  getSignals: () => SIGNALS,
+  getAlerts: () => ALERTS,
+  getRiskChains: () => RISK_CHAINS,
+  getStatementChecks: () => STATEMENT_CHECKS,
+  getCompressionLevels: () => COMPRESSION_LEVELS,
+  getAudit: () => AUDIT,
+  getAuditLog: () => AUDIT_LOG,
+  getReports: () => REPORTS,
+  getEvidence: (id) => EVIDENCE[id] || null,
+  getSuggestedQuestions: () => SUGGESTED_QUESTIONS,
+
+  askReport(question) {
+    const q = question.toLowerCase();
+    let best = null, bestScore = 0;
+    for (const item of QA) {
+      const score = item.match.reduce((s, k) => s + (q.includes(k) ? 1 : 0), 0);
+      if (score > bestScore) { best = item; bestScore = score; }
+    }
+    if (best) return { grounded: true, ...best };
+    return {
+      grounded: false,
+      answer: "I could not find a direct statement about that in the processed Q2 FY2026 documents, so I won't speculate. Here is the closest decision-relevant information available:",
+      fact: "Top QoQ changes: Revenue +15%, Net Profit −20%, Debt +30%, Operating Cash Flow −36%.",
+      analysis: "The quarter combines top-line growth with margin pressure, rising leverage and weaker cash conversion.",
+      significance: "The flagged items (export demand, debt, cash-flow divergence) are where analyst review is currently focused.",
+      page: 8, evidenceId: "EV-P08",
+    };
+  },
+};
+===== FILE: src/hooks/useAppState.jsx =====
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+
+const AppCtx = createContext(null);
+
+export function AppProvider({ children }) {
+  const [role, setRole] = useState("analyst");
+  const [compressionLevel, setCompressionLevel] = useState("c75");
+  const [evidenceId, setEvidenceId] = useState(null);
+  const [watchlist, setWatchlist] = useState(["AL-02"]);
+
+  const openEvidence = useCallback((id) => setEvidenceId(id), []);
+  const closeEvidence = useCallback(() => setEvidenceId(null), []);
+  const toggleWatch = useCallback(
+    (id) => setWatchlist((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id])), []);
+
+  const value = useMemo(
+    () => ({ role, setRole, compressionLevel, setCompressionLevel, evidenceId, openEvidence, closeEvidence, watchlist, toggleWatch }),
+    [role, compressionLevel, evidenceId, watchlist, openEvidence, closeEvidence, toggleWatch]);
+
+  return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
+}
+
+export function useAppState() {
+  const ctx = useContext(AppCtx);
+  if (!ctx) throw new Error("useAppState must be used inside <AppProvider>");
+  return ctx;
+}
+===== FILE: src/hooks/usePipeline.js =====
+import { useEffect, useRef, useState } from "react";
+
+export function usePipeline(steps, { stepMs = 850 } = {}) {
+  const [active, setActive] = useState(-1);
+  const timer = useRef(null);
+  const running = active >= 0 && active < steps.length;
+  const done = active >= steps.length;
+
+  useEffect(() => {
+    if (running) {
+      timer.current = setTimeout(() => setActive((a) => a + 1), stepMs);
+      return () => clearTimeout(timer.current);
+    }
+  }, [active, running, stepMs]);
+
+  return {
+    active, running, done,
+    start: () => setActive(0),
+    reset: () => setActive(-1),
+    status: (i) => (done || active > i ? "done" : active === i ? "active" : "pending"),
+  };
+}
+===== FILE: src/components/Icons.jsx =====
+const C = (cx, cy, r) => `M${cx + r} ${cy}a${r} ${r} 0 1 1 ${-2 * r} 0 ${r} ${r} 0 1 1 ${2 * r} 0z`;
+
+export const ICON_PATHS = {
+  logo: ["M3 17l5-5 4 4 8-9", "M15 7h5v5"],
+  grid: ["M3 3h7v7H3z", "M14 3h7v7h-7z", "M3 14h7v7H3z", "M14 14h7v7h-7z"],
+  file: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M16 13H8", "M16 17H8", "M10 9H8"],
+  zap: ["M13 2L3 14h9l-1 8 10-12h-9l1-8z"],
+  compare: ["M17 1l4 4-4 4", "M3 11V9a4 4 0 0 1 4-4h14", "M7 23l-4-4 4-4", "M21 13v2a4 4 0 0 1-4 4H3"],
+  share: [C(18, 5, 3), C(6, 12, 3), C(18, 19, 3), "M8.59 13.51l6.83 3.98", "M15.41 6.51l-6.82 3.98"],
+  shield: ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"],
+  "shield-check": ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "M9 12l2 2 4-4"],
+  message: ["M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z", "M12 8v4", "M12 15h.01"],
+  clip: ["M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"],
+  list: ["M8 6h13", "M8 12h13", "M8 18h13", "M3 6h.01", "M3 12h.01", "M3 18h.01"],
+  settings: [C(12, 12, 3), "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"],
+  upload: ["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M17 8l-5-5-5 5", "M12 3v12"],
+  download: ["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "M7 10l5 5 5-5", "M12 15V3"],
+  search: [C(11, 11, 8), "M21 21l-4.35-4.35"],
+  bell: ["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9", "M13.73 21a2 2 0 0 1-3.46 0"],
+  menu: ["M3 6h18", "M3 12h18", "M3 18h18"],
+  x: ["M18 6L6 18", "M6 6l12 12"],
+  user: ["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2", C(12, 7, 4)],
+  check: ["M20 6L9 17l-5-5"],
+  "check-circle": ["M22 11.08V12a10 10 0 1 1-5.93-9.14", "M22 4L12 14.01l-3-3"],
+  "alert-triangle": ["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z", "M12 9v4", "M12 17h.01"],
+  "alert-circle": [C(12, 12, 10), "M12 8v4", "M12 16h.01"],
+  info: [C(12, 12, 10), "M12 16v-4", "M12 8h.01"],
+  "trending-up": ["M23 6l-9.5 9.5-5-5L1 18", "M17 6h6v6"],
+  "trending-down": ["M23 18l-9.5-9.5-5 5L1 6", "M17 18h6v-6"],
+  "arrow-up": ["M12 19V5", "M5 12l7-7 7 7"],
+  "arrow-down": ["M12 5v14", "M19 12l-7 7-7-7"],
+  "arrow-right": ["M5 12h14", "M12 5l7 7-7 7"],
+  "chevron-down": ["M6 9l6 6 6-6"],
+  "chevron-right": ["M9 18l6-6-6-6"],
+  logout: ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
+  refresh: ["M23 4v6h-6", "M1 20v-6h6", "M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"],
+  clock: [C(12, 12, 10), "M12 6v6l4 2"],
+  layers: ["M12 2L2 7l10 5 10-5-10-5z", "M2 17l10 5 10-5", "M2 12l10 5 10-5"],
+  external: ["M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6", "M15 3h6v6", "M10 14L21 3"],
+  filter: ["M22 3H2l8 9.46V19l4 2v-8.54L22 3z"],
+  play: ["M5 3l14 9-14 9V3z"],
+  plus: ["M12 5v14", "M5 12h14"],
+  minus: ["M5 12h14"],
+  eye: ["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z", C(12, 12, 3)],
+  target: [C(12, 12, 10), C(12, 12, 6), C(12, 12, 2)],
+  award: [C(12, 8, 7), "M8.21 13.89L7 23l5-3 5 3-1.21-9.12"],
+  database: ["M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3z", "M21 12c0 1.66-4 3-9 3s-9-1.34-9-3", "M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"],
+  cpu: ["M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", "M9 9h6v6H9z", "M9 1v3", "M15 1v3", "M9 20v3", "M15 20v3", "M20 9h3", "M20 14h3", "M1 9h3", "M1 14h3"],
+  send: ["M22 2L11 13", "M22 2l-7 20-4-9-9-4 20-7z"],
+  link: ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
+  scale: ["M12 3v18", "M8 21h8", "M4 7h16", "M7 7l-3 6a3 3 0 0 0 6 0L7 7z", "M17 7l-3 6a3 3 0 0 0 6 0l-3-6z"],
+  briefcase: ["M2 9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z", "M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"],
+  star: ["M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"],
+};
+
+export function Icon({ name, className = "h-4 w-4", strokeWidth = 2, filled = false }) {
+  const paths = ICON_PATHS[name] || ICON_PATHS.info;
+  return (
+    <svg viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor"
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
+      {paths.map((d, i) => <path key={i} d={d} />)}
+    </svg>
+  );
+}
+===== FILE: src/components/ui.jsx =====
+import { Icon } from "./Icons";
+import { useAppState } from "../hooks/useAppState";
+
+export function Card({ className = "", children }) {
+  return <div className={`card ${className}`}>{children}</div>;
+}
+
+export function PageHeader({ title, sub, right }) {
+  return (
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-navy-950">{title}</h1>
+        {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
+      </div>
+      {right && <div className="flex flex-wrap items-center gap-2">{right}</div>}
+    </div>
+  );
+}
+
+export function SectionHeader({ title, sub, icon, right }) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2.5">
+        {icon && (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy-900 text-gold-400">
+            <Icon name={icon} className="h-5 w-5" />
+          </span>
+        )}
+        <div>
+          <h2 className="text-[15px] font-bold text-navy-950">{title}</h2>
+          {sub && <p className="text-xs text-slate-500">{sub}</p>}
+        </div>
+      </div>
+      {right && <div className="flex flex-wrap items-center gap-2">{right}</div>}
+    </div>
+  );
+}
+
+const TONES = {
+  navy: "bg-navy-900 text-white",
+  gold: "bg-gold-500/15 text-gold-700 border border-gold-300",
+  high: "bg-rose-50 text-rose-700 border border-rose-200",
+  medium: "bg-amber-50 text-amber-700 border border-amber-200",
+  low: "bg-sky-50 text-sky-700 border border-sky-200",
+  good: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  bad: "bg-rose-50 text-rose-700 border border-rose-200",
+  info: "bg-slate-100 text-slate-600 border border-slate-200",
+};
+
+export function Badge({ tone = "info", children, className = "" }) {
+  return <span className={`badge ${TONES[tone] || TONES.info} ${className}`}>{children}</span>;
+}
+
+export function DeltaChip({ delta, goodWhenUp = true }) {
+  const good = delta >= 0 ? goodWhenUp : !goodWhenUp;
+  return (
+    <span className={`badge ${good ? TONES.good : TONES.bad}`}>
+      <Icon name={delta >= 0 ? "arrow-up" : "arrow-down"} className="h-3 w-3" strokeWidth={2.5} />
+      {delta > 0 ? "+" : ""}{delta}%
+    </span>
+  );
+}
+
+export function Meter({ value, tone = "bg-gold-500", className = "" }) {
+  return (
+    <div className={`h-1.5 w-full overflow-hidden rounded-full bg-slate-200 ${className}`}>
+      <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+    </div>
+  );
+}
+
+export function EvidenceLink({ id, page, label = "Evidence", className = "" }) {
+  const { openEvidence } = useAppState();
+  return (
+    <button onClick={() => openEvidence(id)}
+      className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-800 transition hover:border-gold-400 hover:bg-gold-50 ${className}`}>
+      <Icon name="clip" className="h-3.5 w-3.5 text-gold-600" />
+      {label}{page ? <span className="font-normal text-slate-400">· p.{page}</span> : null}
+    </button>
+  );
+}
+
+export function DisclaimerBar() {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-navy-800 bg-navy-950/95 backdrop-blur">
+      <p className="mx-auto max-w-7xl px-4 py-2 text-center text-[11px] leading-snug text-slate-400">
+        <span className="font-semibold text-gold-400">Analytical support only.</span>{" "}
+        FinSight X does not predict stock prices, issue buy/sell recommendations, approve loans, or allege fraud.
+      </p>
+    </div>
+  );
+}
+===== FILE: src/components/Sidebar.jsx =====
+import { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { Icon } from "./Icons";
+import { useAppState } from "../hooks/useAppState";
+import { ROLES } from "../data/mockData";
+
+const NAV = [
+  { section: "Intelligence", items: [
+    { to: "/dashboard", label: "Dashboard", icon: "grid" },
+    { to: "/reports", label: "Reports", icon: "file" },
+    { to: "/signals", label: "Financial Signals", icon: "zap" },
+    { to: "/change", label: "Change Intelligence", icon: "compare" },
+  ] },
+  { section: "Risk & Assurance", items: [
+    { to: "/risk", label: "Risk Intelligence", icon: "share" },
+    { to: "/auditor", label: "AI Auditor", icon: "shield" },
+    { to: "/ask", label: "Ask the Report", icon: "message" },
+    { to: "/evidence", label: "Evidence", icon: "clip" },
+    { to: "/audit-log", label: "Audit Log", icon: "list" },
+  ] },
+  { section: "System", items: [{ to: "/settings", label: "Settings", icon: "settings" }] },
+];
+
+export default function Sidebar({ open, onClose }) {
+  const { role, setRole } = useAppState();
+  const [roleMenu, setRoleMenu] = useState(false);
+  const r = ROLES[role];
+
+  return (
+    <>
+      {open && <div className="fixed inset-0 z-40 bg-navy-950/60 lg:hidden" onClick={onClose} />}
+      <aside className={`dark-scroll fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col border-r border-navy-800 bg-navy-950 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
+        <NavLink to="/dashboard" onClick={onClose} className="flex items-center gap-3 border-b border-navy-800 px-5 py-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-500 text-navy-950">
+            <Icon name="trending-up" className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <span>
+            <span className="block text-[15px] font-bold leading-tight text-white">FinSight X</span>
+            <span className="block text-[10px] uppercase tracking-[0.14em] text-slate-400">Financial Intelligence Platform</span>
+          </span>
+        </NavLink>
+
+        <nav className="nice-scroll flex-1 space-y-6 overflow-y-auto px-3 py-4">
+          {NAV.map((group) => (
+            <div key={group.section}>
+              <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{group.section}</div>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink key={item.to} to={item.to} onClick={onClose}
+                    className={({ isActive }) => `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      isActive ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-slate-100"}`}>
+                    {({ isActive }) => (
+                      <>
+                        {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r bg-gold-400" />}
+                        <Icon name={item.icon} className="h-[18px] w-[18px]" />
+                        {item.label}
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="relative border-t border-navy-800 p-3">
+          {roleMenu && (
+            <div className="fade-up absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-navy-700 bg-navy-900 p-2 shadow-xl">
+              <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Switch demo role</div>
+              {Object.values(ROLES).map((opt) => (
+                <button key={opt.key} onClick={() => { setRole(opt.key); setRoleMenu(false); }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-white/5">
+                  <Icon name={opt.icon} className={`h-4 w-4 ${opt.key === role ? "text-gold-400" : "text-slate-400"}`} />
+                  <span className="flex-1 text-[13px] font-medium text-slate-200">{opt.label}</span>
+                  {opt.key === role && <Icon name="check" className="h-3.5 w-3.5 text-gold-400" strokeWidth={3} />}
+                </button>
+              ))}
+            </div>
+          )}
+          <button onClick={() => setRoleMenu(!roleMenu)} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-navy-950">{r.initials}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-semibold text-white">{r.name}</span>
+              <span className="block truncate text-[11px] text-slate-400">{r.label} · demo profile</span>
+            </span>
+            <Icon name="chevron-down" className={`h-4 w-4 text-slate-500 transition-transform ${roleMenu ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}
+===== FILE: src/components/Topbar.jsx =====
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Icon } from "./Icons";
+import { useAppState } from "../hooks/useAppState";
+import { ROLES, NOTIFICATIONS, SEARCH_INDEX } from "../data/mockData";
+
+const PRIORITY_DOT = { HIGH: "bg-rose-500", MEDIUM: "bg-amber-500", LOW: "bg-sky-500" };
+
+export default function Topbar({ onMenu }) {
+  const { role, setRole } = useAppState();
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [unread, setUnread] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const r = ROLES[role];
+  const results = q.trim() ? SEARCH_INDEX.filter((x) => (x.title + " " + x.sub).toLowerCase().includes(q.toLowerCase())).slice(0, 6) : [];
+  const closeAll = () => { setSearchOpen(false); setBellOpen(false); setProfileOpen(false); };
+
+  return (
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
+        <button onClick={onMenu} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden">
+          <Icon name="menu" className="h-5 w-5" />
+        </button>
+
+        <div className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 md:flex">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Company</span>
+          <span className="text-[13px] font-bold text-navy-950">ABC Corporation</span>
+        </div>
+        <div className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 sm:flex">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Period</span>
+          <span className="text-[13px] font-bold text-navy-950">Q2 FY2026</span>
+        </div>
+        <div className="hidden items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 lg:flex">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          <span className="text-[12px] font-semibold text-emerald-700">Analysis Complete</span>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative hidden md:block">
+            <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input value={q} onFocus={() => setSearchOpen(true)}
+              onChange={(e) => { setQ(e.target.value); setSearchOpen(true); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && results[0]) { navigate(results[0].to); setQ(""); closeAll(); } }}
+              placeholder="Search signals, alerts, evidence…"
+              className="input w-64 !py-1.5 pl-9 text-[13px]" />
+            {searchOpen && q.trim() && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setSearchOpen(false)} />
+                <div className="fade-up absolute right-0 top-full z-30 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  {results.length ? results.map((res, i) => (
+                    <button key={i} onClick={() => { navigate(res.to); setQ(""); closeAll(); }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50">
+                      <Icon name={res.type === "signal" ? "zap" : res.type === "alert" ? "alert-triangle" : res.type === "evidence" ? "clip" : "grid"}
+                        className="h-4 w-4 shrink-0 text-gold-600" />
+                      <span className="min-w-0"><span className="block truncate text-[13px] font-semibold text-navy-950">{res.title}</span>
+                        <span className="block truncate text-[11px] text-slate-400">{res.sub}</span></span>
+                    </button>
+                  )) : <div className="px-3 py-3 text-sm text-slate-500">No matches in this workspace.</div>}
+                </div>
+              </>
+            )}
+          </div>
+
+          <Link to="/upload" className="btn btn-gold hidden !px-3 !py-1.5 text-xs sm:inline-flex">
+            <Icon name="plus" className="h-3.5 w-3.5" strokeWidth={2.5} />New Analysis
+          </Link>
+
+          <div className="relative">
+            <button onClick={() => { setBellOpen(!bellOpen); setProfileOpen(false); setSearchOpen(false); }}
+              className="relative rounded-lg border border-slate-200 bg-white p-2 text-slate-500 hover:border-slate-300 hover:text-navy-900">
+              <Icon name="bell" className="h-[18px] w-[18px]" />
+              {unread && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">{NOTIFICATIONS.length}</span>}
+            </button>
+            {bellOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={closeAll} />
+                <div className="fade-up absolute right-0 top-full z-30 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+                    <span className="text-sm font-bold text-navy-950">Notifications</span>
+                    <button onClick={() => setUnread(false)} className="text-[11px] font-semibold text-gold-700 hover:underline">Mark all read</button>
+                  </div>
+                  {NOTIFICATIONS.map((n) => (
+                    <button key={n.id} onClick={() => { navigate(n.to); closeAll(); }}
+                      className="flex w-full items-start gap-2.5 px-4 py-2.5 text-left hover:bg-slate-50">
+                      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[n.priority]}`} />
+                      <span><span className="block text-[13px] font-semibold text-navy-950">{n.title}</span>
+                        <span className="text-[11px] text-slate-400">{n.priority} priority · {n.time}</span></span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="relative">
+            <button onClick={() => { setProfileOpen(!profileOpen); setBellOpen(false); setSearchOpen(false); }}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white py-1.5 pl-1.5 pr-2.5 hover:border-slate-300">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy-900 text-[11px] font-bold text-gold-400">{r.initials}</span>
+              <span className="hidden text-left sm:block">
+                <span className="block text-[12px] font-bold leading-tight text-navy-950">{r.name}</span>
+                <span className="block text-[10px] leading-tight text-slate-400">{r.label}</span>
+              </span>
+              <Icon name="chevron-down" className="h-3.5 w-3.5 text-slate-400" />
+            </button>
+            {profileOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={closeAll} />
+                <div className="fade-up absolute right-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  <div className="border-b border-slate-100 px-4 py-3">
+                    <div className="text-sm font-bold text-navy-950">{r.name}</div>
+                    <div className="text-[11px] text-slate-400">{r.label} · demo session</div>
+                  </div>
+                  <div className="px-2 py-2">
+                    <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Switch role</div>
+                    {Object.values(ROLES).map((opt) => (
+                      <button key={opt.key} onClick={() => { setRole(opt.key); closeAll(); }}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-slate-50">
+                        <Icon name={opt.icon} className={`h-4 w-4 ${opt.key === role ? "text-gold-600" : "text-slate-400"}`} />
+                        <span className="flex-1 text-[13px] font-medium text-slate-700">{opt.label}</span>
+                        {opt.key === role && <Icon name="check" className="h-3.5 w-3.5 text-gold-600" strokeWidth={3} />}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={closeAll} className="flex w-full items-center gap-2.5 border-t border-slate-100 px-4 py-2.5 text-left text-[13px] font-medium text-slate-500 hover:bg-slate-50">
+                    <Icon name="logout" className="h-4 w-4" />Sign out (demo)
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+===== FILE: src/components/KPICard.jsx =====
+import { Link } from "react-router-dom";
+import { Icon } from "./Icons";
+import { Badge, DeltaChip } from "./ui";
+import Sparkline from "./Sparkline";
+
+export default function KPICard({ icon = "activity", label, value, delta, goodWhenUp = true, sub, to, spark }) {
+  const body = (
+    <>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="label truncate">{label}</div>
+          <div className="mt-1.5 text-2xl font-bold tracking-tight text-navy-950">{value}</div>
+        </div>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy-50 text-navy-700">
+          <Icon name={icon} className="h-5 w-5" />
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        {delta != null ? <DeltaChip delta={delta} goodWhenUp={goodWhenUp} />
+          : sub ? <Badge tone="gold">{sub}</Badge> : <span />}
+        {spark ? <Sparkline data={spark} />
+          : sub && delta != null ? <span className="text-[11px] text-slate-400">{sub}</span> : null}
+      </div>
+    </>
+  );
+  const cls = "card card-hover block w-full p-4 text-left";
+  return to ? <Link to={to} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
+}
+===== FILE: src/components/Sparkline.jsx =====
+export default function Sparkline({ data = [], stroke = "#3A5CA0", width = 72, height = 26 }) {
+  if (data.length < 2) return null;
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const pts = data
+    .map((v, i) => `${(i / (data.length - 1)) * (width - 6) + 3},${height - 4 - ((v - min) / range) * (height - 8)}`)
+    .join(" ");
+  const last = pts.split(" ").pop().split(",");
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline points={pts} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0]} cy={last[1]} r="2.5" fill={stroke} />
+    </svg>
+  );
+}
+===== FILE: src/components/FidelityGauge.jsx =====
+export default function FidelityGauge({ value = 94, label = "Fidelity Score", size = 170 }) {
+  const R = 62, LEN = Math.PI * R;
+  const dash = (Math.min(100, Math.max(0, value)) / 100) * LEN;
+  const color = value >= 90 ? "#A98620" : value >= 75 ? "#D97706" : "#DC2626";
+  const arc = `M 18 88 A ${R} ${R} 0 0 1 142 88`;
+  return (
+    <div className="relative inline-block" style={{ width: size }}>
+      <svg viewBox="0 0 160 100" className="w-full">
+        <path d={arc} fill="none" stroke="#E5E7EB" strokeWidth="12" strokeLinecap="round" />
+        <path d={arc} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
+          strokeDasharray={`${dash} ${LEN * 2}`} style={{ transition: "stroke-dasharray .6s ease" }} />
+      </svg>
+      <div className="absolute inset-x-0 bottom-0 text-center">
+        <div className="text-[26px] font-bold leading-none text-navy-950">{value}%</div>
+        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/components/AlertCard.jsx =====
+import { Icon } from "./Icons";
+import { Badge } from "./ui";
+import { useAppState } from "../hooks/useAppState";
+
+const PRIORITY = {
+  HIGH: { tone: "high", icon: "alert-triangle", ring: "border-l-rose-500" },
+  MEDIUM: { tone: "medium", icon: "alert-circle", ring: "border-l-amber-500" },
+  LOW: { tone: "low", icon: "info", ring: "border-l-sky-500" },
+};
+
+export default function AlertCard({ alert, onReview, watchlisted = false, onToggleWatch }) {
+  const p = PRIORITY[alert.priority] || PRIORITY.LOW;
+  const { openEvidence } = useAppState();
+  return (
+    <div className={`card card-hover border-l-4 p-4 ${p.ring}`}>
+      <div className="flex items-center justify-between gap-2">
+        <Badge tone={p.tone}><Icon name={p.icon} className="h-3 w-3" />{alert.priority} PRIORITY</Badge>
+        <div className="flex items-center gap-2">
+          {onToggleWatch && (
+            <button onClick={() => onToggleWatch(alert.id)} title="Add to watchlist"
+              className={watchlisted ? "text-gold-500" : "text-slate-300 hover:text-gold-500"}>
+              <Icon name="star" filled={watchlisted} className="h-4 w-4" />
+            </button>
+          )}
+          <span className="text-[11px] font-medium text-slate-400">{alert.id}</span>
+        </div>
+      </div>
+      <h3 className="mt-2 text-[15px] font-bold leading-snug text-navy-950">{alert.title}</h3>
+      <dl className="mt-2.5 space-y-1.5 text-[13px]">
+        <div className="flex gap-2">
+          <dt className="w-28 shrink-0 font-semibold text-slate-500">Why flagged</dt>
+          <dd className="text-slate-700">{alert.why}</dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="w-28 shrink-0 font-semibold text-slate-500">Potential impact</dt>
+          <dd className="text-slate-700">{alert.impact}</dd>
+        </div>
+      </dl>
+      <div className="mt-3.5 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <button onClick={() => openEvidence(alert.evidenceId)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-navy-800">
+          <Icon name="clip" className="h-3.5 w-3.5 text-gold-600" /> Evidence attached
+        </button>
+        <button onClick={onReview} className="btn btn-gold px-3 py-1.5 text-xs">
+          <Icon name="eye" className="h-3.5 w-3.5" /> Review Evidence
+        </button>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/components/SignalCard.jsx =====
+import { useState } from "react";
+import { Icon } from "./Icons";
+import { Badge, EvidenceLink, Meter } from "./ui";
+
+const SEV = {
+  high: { tone: "high", tag: "Risk · High" },
+  medium: { tone: "medium", tag: "Risk · Medium" },
+  low: { tone: "info", tag: "Informational" },
+};
+const CAT_STYLE = {
+  positive: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  risk: "border-rose-200 bg-rose-50 text-rose-700",
+  info: "border-slate-200 bg-slate-100 text-slate-600",
+};
+
+export default function SignalCard({ signal }) {
+  const [open, setOpen] = useState(false);
+  const sev = SEV[signal.severity] || SEV.low;
+  return (
+    <div className="card card-hover p-4">
+      <button onClick={() => setOpen(!open)} className="flex w-full items-start justify-between gap-3 text-left">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={sev.tone}>{sev.tag}</Badge>
+            <span className="text-[11px] font-medium text-slate-400">{signal.id}</span>
+          </div>
+          <h3 className="mt-2 text-[15px] font-bold leading-snug text-navy-950">{signal.title}</h3>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-500">{signal.metric}</span>
+            <span className={`badge border ${CAT_STYLE[signal.category] || CAT_STYLE.info}`}>{signal.delta}</span>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <span className="text-xs font-bold text-gold-700">{signal.confidence}% conf.</span>
+          <Icon name="chevron-down" className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+      <p className="mt-2.5 text-[13px] text-slate-600">{signal.summary}</p>
+      {open && (
+        <div className="fade-up mt-3 space-y-3 border-t border-slate-100 pt-3">
+          <div>
+            <div className="label">AI Analysis</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-slate-700">{signal.aiAnalysis}</p>
+          </div>
+          <div>
+            <div className="label">Potential Significance</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-slate-700">{signal.significance}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="flex justify-between text-[11px] text-slate-500">
+                <span>Model confidence</span><span className="font-semibold">{signal.confidence}%</span>
+              </div>
+              <Meter value={signal.confidence} className="mt-1" />
+            </div>
+            <EvidenceLink id={signal.evidenceId} page={signal.page} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+===== FILE: src/components/RiskGraph.jsx =====
+import { Fragment } from "react";
+import { Badge } from "./ui";
+
+const SEV = {
+  slate: { dot: "bg-slate-400", chip: "border-slate-200 bg-slate-100 text-slate-600", hover: "hover:border-navy-300" },
+  amber: { dot: "bg-amber-500", chip: "border-amber-200 bg-amber-50 text-amber-700", hover: "hover:border-amber-300" },
+  rose: { dot: "bg-rose-500", chip: "border-rose-200 bg-rose-50 text-rose-700", hover: "hover:border-rose-300" },
+};
+
+function Connector({ active }) {
+  return (
+    <div className="relative mx-auto h-8 w-px" aria-hidden="true">
+      <div className={`absolute inset-y-0 w-px ${active ? "bg-gold-500" : "bg-slate-300"}`} />
+      <span className={`absolute -bottom-[3px] left-1/2 h-0 w-0 -translate-x-1/2 border-x-[5px] border-t-[6px] border-x-transparent ${active ? "border-t-gold-500" : "border-t-slate-400"}`} />
+      <span className={`connector-dot ${active ? "bg-gold-400" : "bg-slate-300"}`} />
+    </div>
+  );
+}
+
+export default function RiskGraph({ chains, selected, onSelect }) {
+  return (
+    <div className="grid gap-5 lg:grid-cols-2">
+      {chains.map((chain) => {
+        const selIdx = chain.nodes.findIndex((n) => n.id === selected?.id);
+        return (
+          <div key={chain.id} className="card p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-navy-950">{chain.name}</h3>
+                <p className="text-xs text-slate-500">{chain.nodes.length} linked nodes · trigger: {chain.trigger}</p>
+              </div>
+              <Badge tone="navy">{chain.id}</Badge>
+            </div>
+            <div className="mt-4">
+              {chain.nodes.map((n, i) => {
+                const s = SEV[n.sev] || SEV.slate;
+                const isSel = selected?.id === n.id;
+                const inPath = selIdx >= 0 && i <= selIdx;
+                return (
+                  <Fragment key={n.id}>
+                    {i > 0 && <Connector active={inPath} />}
+                    <button onClick={() => onSelect(n)}
+                      className={`w-full rounded-xl border bg-white p-3 text-left transition duration-150 ${
+                        isSel ? "border-gold-500 shadow-md ring-2 ring-gold-500/30"
+                        : inPath ? "border-gold-300 bg-gold-50/40"
+                        : `border-slate-200 hover:shadow-sm ${s.hover}`}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${s.dot}`} />
+                          <span className="text-sm font-bold text-navy-950">{n.title}</span>
+                        </div>
+                        <span className={`badge border ${s.chip}`}>Impact L{n.level}</span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-xs text-slate-500">{n.trigger}</p>
+                    </button>
+                  </Fragment>
+                );
+              })}
+            </div>
+            <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
+              Click any node to inspect its trigger, evidence and AI analysis. Links describe exposure pathways — not predictions.
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+===== FILE: src/components/AuditPanel.jsx =====
+import { Icon } from "./Icons";
+import { Badge } from "./ui";
+import FidelityGauge from "./FidelityGauge";
+
+export function SignalScore({ value, label, compact = false }) {
+  const border = value < 0 ? "border-rose-200 bg-rose-50" : value > 0 ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50";
+  const color = value < 0 ? "text-rose-600" : value > 0 ? "text-emerald-600" : "text-slate-500";
+  return (
+    <div className={`rounded-xl border text-center ${border} ${compact ? "px-3 py-1.5" : "px-4 py-2.5"}`}>
+      <div className={`font-bold leading-none ${color} ${compact ? "text-lg" : "text-2xl"}`}>
+        {value > 0 ? `+${value}` : value}
+      </div>
+      <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+    </div>
+  );
+}
+
+export default function AuditPanel({ audit, compact = false }) {
+  const passed = audit.status === "passed";
+  return (
+    <div className={compact ? "flex flex-wrap items-center gap-4" : "flex flex-col gap-6 md:flex-row md:items-center"}>
+      <div className="flex items-center gap-2.5">
+        <SignalScore value={audit.originalSignal} label="Original Report Signal" />
+        <Icon name="arrow-right" className="h-5 w-5 text-slate-300" />
+        <SignalScore value={audit.summarySignal} label="Compressed Summary Signal" />
+      </div>
+      <FidelityGauge value={audit.fidelity} size={compact ? 140 : 170} label="Fidelity" />
+      <div className="min-w-[220px] flex-1">
+        <Badge tone={passed ? "good" : "medium"}>
+          <Icon name={passed ? "check-circle" : "alert-triangle"} className="h-3.5 w-3.5" />
+          {passed ? "✓ AUDIT PASSED" : "⚠ MISMATCH DETECTED"}
+        </Badge>
+        <p className={`mt-2 leading-relaxed text-slate-600 ${compact ? "text-[13px]" : "text-sm"}`}>{audit.statement}</p>
+        {!compact && (
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[["Points checked", audit.checked], ["Aligned", audit.aligned], ["Paraphrased", audit.paraphrased]].map(([k, v]) => (
+              <div key={k} className="rounded-lg bg-slate-50 px-3 py-2 text-center">
+                <div className="text-lg font-bold text-navy-950">{v}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{k}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+===== FILE: src/components/PipelineFlow.jsx =====
+import { Icon } from "./Icons";
+
+export default function PipelineFlow({ steps, current = steps.length }) {
+  return (
+    <ol className="flex flex-wrap items-center gap-y-2">
+      {steps.map((s, i) => {
+        const done = i < current, active = i === current;
+        return (
+          <li key={s} className="flex items-center">
+            <div className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              done ? "bg-navy-900 text-white" : active ? "bg-gold-500 text-navy-950" : "bg-slate-100 text-slate-500"}`}>
+              {done ? <Icon name="check" className="h-3 w-3" strokeWidth={3} />
+                : active ? <span className="h-2 w-2 animate-pulse rounded-full bg-navy-950" />
+                : <span className="h-2 w-2 rounded-full bg-slate-300" />}
+              {s}
+            </div>
+            {i < steps.length - 1 && <span className={`mx-1 h-px w-4 ${done ? "bg-navy-900" : "bg-slate-300"}`} />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+===== FILE: src/components/ComparisonChart.jsx =====
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
+
+const TIP = { background: "#fff", border: "1px solid #E2E8F0", borderRadius: "10px", fontSize: "12px", boxShadow: "0 8px 20px rgba(15,29,56,.08)" };
+
+function ChangeTip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const q1 = payload.find((p) => p.dataKey === "Q1")?.value;
+  const q2 = payload.find((p) => p.dataKey === "Q2")?.value;
+  const pct = q1 ? ((q2 - q1) / q1) * 100 : 0;
+  return (
+    <div className="px-3 py-2" style={TIP}>
+      <div className="text-xs font-bold text-navy-950">{label}</div>
+      <div className="mt-1 text-xs text-slate-600">Q1: ₹{q1} Cr</div>
+      <div className="text-xs text-slate-600">Q2: ₹{q2} Cr</div>
+      <div className={`mt-1 text-xs font-bold ${pct >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+        {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+      </div>
+    </div>
+  );
+}
+
+export function ComparisonChart({ data, height = 300 }) {
+  return (
+    <div style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: -8 }} barGap={4}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EEF1F5" />
+          <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#475569" }} tickLine={false} axisLine={{ stroke: "#CBD5E1" }} />
+          <YAxis tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} axisLine={false} />
+          <Tooltip content={<ChangeTip />} cursor={{ fill: "rgba(15,29,56,0.04)" }} />
+          <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} formatter={(v) => <span className="text-slate-600">{v}</span>} />
+          <Bar dataKey="Q1" fill="#CBD5E1" radius={[4, 4, 0, 0]} maxBarSize={38} />
+          <Bar dataKey="Q2" fill="#182A4C" radius={[4, 4, 0, 0]} maxBarSize={38} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function TrendChart({ history, height = 260 }) {
+  const data = history.labels.map((q, i) => ({ q, Revenue: history.revenue[i], "Net Profit": history.netProfit[i], Debt: history.debt[i] }));
+  return (
+    <div style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: -8 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EEF1F5" />
+          <XAxis dataKey="q" tick={{ fontSize: 11, fill: "#475569" }} tickLine={false} axisLine={{ stroke: "#CBD5E1" }} />
+          <YAxis tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} axisLine={false} />
+          <Tooltip contentStyle={TIP} cursor={{ stroke: "#CBD5E1", strokeDasharray: "3 3" }} />
+          <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} formatter={(v) => <span className="text-slate-600">{v}</span>} />
+          <Line type="monotone" dataKey="Revenue" stroke="#3A5CA0" strokeWidth={2.5} dot={{ r: 3, fill: "#3A5CA0", strokeWidth: 0 }} />
+          <Line type="monotone" dataKey="Net Profit" stroke="#C9A227" strokeWidth={2.5} dot={{ r: 3, fill: "#C9A227", strokeWidth: 0 }} />
+          <Line type="monotone" dataKey="Debt" stroke="#DC2626" strokeWidth={2} dot={{ r: 2.5, fill: "#DC2626", strokeWidth: 0 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+===== FILE: src/components/CompressionPanel.jsx =====
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Icon } from "./Icons";
+import { Badge, Card, SectionHeader } from "./ui";
+import FidelityGauge from "./FidelityGauge";
+import { COMPRESSION_LEVELS } from "../data/mockData";
+import { useAppState } from "../hooks/useAppState";
+import { fmtInt } from "../utils/format";
+
+const TIP = { background: "#fff", border: "1px solid #E2E8F0", borderRadius: "10px", fontSize: "12px" };
+
+export default function CompressionPanel() {
+  const { compressionLevel, setCompressionLevel } = useAppState();
+  const lvl = COMPRESSION_LEVELS.find((l) => l.id === compressionLevel);
+  const chart = COMPRESSION_LEVELS.map((l) => ({
+    name: l.label.replace(" Compression", ""), Original: l.originalTokens, Compressed: l.compressedTokens,
+  }));
+
+  return (
+    <Card className="p-5">
+      <SectionHeader title="Compression Intelligence" icon="layers"
+        sub="GenAI compression with independent fidelity auditing — choose an operating level"
+        right={
+          <div className="flex rounded-lg border border-slate-300 bg-slate-50 p-0.5">
+            {COMPRESSION_LEVELS.map((l) => (
+              <button key={l.id} onClick={() => setCompressionLevel(l.id)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  l.id === compressionLevel ? "bg-navy-900 text-white shadow" : "text-slate-500 hover:text-navy-900"}`}>
+                {l.label.replace(" Compression", "")}
+              </button>
+            ))}
+          </div>
+        } />
+
+      <div className="grid gap-6 lg:grid-cols-[1fr,230px]">
+        <div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[["Original Tokens", fmtInt(lvl.originalTokens), "text-navy-950"],
+              ["Compressed Tokens", fmtInt(lvl.compressedTokens), "text-navy-950"],
+              ["Token Savings", `${lvl.savings}%`, "text-gold-700"],
+              ["Fidelity Score", `${lvl.fidelity}%`, "text-navy-950"]].map(([k, v, c]) => (
+              <div key={k} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-center">
+                <div className={`text-xl font-bold ${c}`}>{v}</div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{k}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4" style={{ height: 190 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chart} margin={{ top: 4, right: 6, bottom: 0, left: -10 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#475569" }} tickLine={false} axisLine={{ stroke: "#CBD5E1" }} />
+                <YAxis tick={{ fontSize: 10, fill: "#64748B" }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={TIP} formatter={(v) => fmtInt(v)} cursor={{ fill: "rgba(15,29,56,0.04)" }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} formatter={(v) => <span className="text-slate-600">{v}</span>} />
+                <Bar dataKey="Original" fill="#CBD5E1" radius={[4, 4, 0, 0]} maxBarSize={34} />
+                <Bar dataKey="Compressed" fill="#C9A227" radius={[4, 4, 0, 0]} maxBarSize={34} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-3 lg:border-l lg:border-slate-200 lg:pl-6">
+          <FidelityGauge value={lvl.fidelity} size={180} label={lvl.label} />
+          <Badge tone={lvl.status === "passed" ? "good" : "medium"}>
+            <Icon name={lvl.status === "passed" ? "check-circle" : "alert-triangle"} className="h-3.5 w-3.5" />
+            {lvl.status === "passed" ? "✓ Audit passed" : `⚠ ${lvl.degraded} signals degraded`}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700"><Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} />Preserved</div>
+          <p className="mt-1 text-xs leading-relaxed text-emerald-800">{lvl.preserved}</p>
+        </div>
+        <div className={`rounded-xl border p-3 ${lvl.degraded ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}>
+          <div className={`flex items-center gap-1.5 text-xs font-bold ${lvl.degraded ? "text-amber-700" : "text-slate-600"}`}>
+            <Icon name={lvl.degraded ? "alert-triangle" : "info"} className="h-3.5 w-3.5" />Removed / condensed
+          </div>
+          <p className={`mt-1 text-xs leading-relaxed ${lvl.degraded ? "text-amber-800" : "text-slate-600"}`}>
+            {lvl.omitted}{lvl.note ? ` ${lvl.note}` : ""}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+===== FILE: src/components/EvidencePanel.jsx =====
+import { useEffect, useState } from "react";
+import { Icon } from "./Icons";
+import { Badge } from "./ui";
+import { useAppState } from "../hooks/useAppState";
+import { service } from "../services/analysisService";
+
+export default function EvidencePanel() {
+  const { evidenceId, closeEvidence } = useAppState();
+  const [showSource, setShowSource] = useState(false);
+  useEffect(() => setShowSource(false), [evidenceId]);
+  const ev = evidenceId ? service.getEvidence(evidenceId) : null;
+  if (!ev) return null;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-navy-950/50" onClick={closeEvidence} />
+      <aside className="fade-up absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-white shadow-2xl nice-scroll">
+        <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-navy-900 text-gold-400">
+              <Icon name="clip" className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-sm font-bold text-navy-950">Evidence Record</div>
+              <div className="text-[11px] text-slate-400">{ev.id} · traceable to source</div>
+            </div>
+          </div>
+          <button onClick={closeEvidence} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <Icon name="x" className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-5">
+          <div>
+            <div className="label">Signal</div>
+            <h3 className="mt-1 text-lg font-bold leading-snug text-navy-950">{ev.signal}</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge tone="navy"><Icon name="file" className="h-3 w-3" />{ev.document}</Badge>
+              <Badge tone="gold">Page {ev.page}</Badge>
+              <Badge tone="info">{ev.type}</Badge>
+            </div>
+          </div>
+
+          <div>
+            <div className="label">Original evidence</div>
+            <blockquote className="mt-1.5 rounded-r-lg border-l-4 border-gold-400 bg-slate-50 px-4 py-3 text-sm italic leading-relaxed text-slate-700">
+              “{ev.quote}”
+            </blockquote>
+          </div>
+
+          <div>
+            <div className="label">AI interpretation</div>
+            <p className="mt-1.5 rounded-xl border border-navy-100 bg-navy-50 px-4 py-3 text-sm leading-relaxed text-navy-900">
+              {ev.interpretation}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setShowSource(!showSource)} className="btn btn-navy text-xs">
+              <Icon name="external" className="h-3.5 w-3.5" />{showSource ? "Hide Source" : "Open Source"}
+            </button>
+            <button onClick={closeEvidence} className="btn btn-outline text-xs">Close</button>
+          </div>
+
+          {showSource && (
+            <div className="fade-up rounded-xl border border-slate-200">
+              <div className="flex items-center justify-between rounded-t-xl border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+                <span className="text-xs font-bold text-navy-950">{ev.document}</span>
+                <span className="text-[11px] font-semibold text-slate-500">Page {ev.page}</span>
+              </div>
+              <div className="space-y-2.5 p-4">
+                <div className="h-2 w-[92%] rounded bg-slate-100" />
+                <div className="h-2 w-full rounded bg-slate-100" />
+                <p className="rounded-lg border border-gold-300 bg-gold-50 px-3 py-2 text-[13px] leading-relaxed text-slate-700">
+                  …{ev.quote}…
+                </p>
+                <div className="h-2 w-[85%] rounded bg-slate-100" />
+                <div className="h-2 w-[70%] rounded bg-slate-100" />
+              </div>
+              <div className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">
+                Simulated source viewer — in production this opens the PDF at page {ev.page}.
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+===== FILE: src/pages/Dashboard.jsx =====
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Icon } from "../components/Icons";
+import { Card, PageHeader, SectionHeader, Badge, DeltaChip, EvidenceLink } from "../components/ui";
+import KPICard from "../components/KPICard";
+import AlertCard from "../components/AlertCard";
+import AuditPanel from "../components/AuditPanel";
+import RiskGraph from "../components/RiskGraph";
+import PipelineFlow from "../components/PipelineFlow";
+import { TrendChart } from "../components/ComparisonChart";
+import { useAppState } from "../hooks/useAppState";
+import { service } from "../services/analysisService";
+import { HISTORY } from "../data/mockData";
+
+const FLOW = ["Ingest", "Compress", "Analyze", "Audit", "Detect", "Connect", "Alert", "Visualize"];
+const TONE_TILE = { navy: "bg-navy-900 text-gold-400", gold: "bg-gold-500/15 text-gold-700", amber: "bg-amber-50 text-amber-600" };
+const CHANGE_PREVIEW = [
+  { label: "Revenue", prev: 800, curr: 920, delta: 15, goodWhenUp: true },
+  { label: "Net Profit", prev: 90, curr: 72, delta: -20, goodWhenUp: true },
+  { label: "Debt", prev: 200, curr: 260, delta: 30, goodWhenUp: false },
+  { label: "Op. Cash Flow", prev: 118, curr: 76, delta: -36, goodWhenUp: true },
+];
+
+function MiniBars({ prev, curr }) {
+  const max = Math.max(prev, curr);
+  return (
+    <div className="flex items-end gap-1.5" title={`Q1: ₹${prev} Cr · Q2: ₹${curr} Cr`}>
+      <div className="w-6 rounded-t bg-slate-300" style={{ height: `${Math.max(6, (prev / max) * 34)}px` }} />
+      <div className="w-6 rounded-t bg-navy-800" style={{ height: `${Math.max(6, (curr / max) * 34)}px` }} />
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const { role, openEvidence } = useAppState();
+  const navigate = useNavigate();
+  const { company, period } = service.getCompanyContext();
+  const [chainNode, setChainNode] = useState(service.getRiskChains()[0].nodes[2]);
+
+  const show = {
+    brief: true, changes: role !== "risk", alerts: true,
+    trends: role !== "risk", auditor: role === "analyst" || role === "ceo",
+    statement: role === "risk", chain: role === "risk", log: role === "risk",
+    alertCount: role === "ceo" ? 2 : role === "analyst" ? 3 : 99,
+  };
+  const alerts = service.getAlerts().slice(0, show.alertCount);
+  const sc = service.getStatementChecks()[0];
+
+  return (
+    <div>
+      <PageHeader title="Financial Intelligence Overview"
+        sub={`${company.name} · ${period.current} vs ${period.previous} · generated by the FinSight X pipeline`}
+        right={<Badge tone="good"><Icon name="shield-check" className="h-3.5 w-3.5" />Audited output · fidelity 94%</Badge>} />
+
+      <Card className="mb-6 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="label">FinSight X pipeline · {period.current}</div>
+            <p className="mt-0.5 text-xs text-slate-500">Upload → Understand → Compress → Audit → Detect → Connect → Alert → Visualize — all stages complete.</p>
+          </div>
+          <PipelineFlow steps={FLOW} current={FLOW.length} />
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+        {service.getKpis().map((k) => <KPICard key={k.key} {...k} />)}
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <Card className="p-5">
+          <SectionHeader title="AI Financial Brief" icon="cpu"
+            sub="Compressed from 20,000 tokens · independently audited"
+            right={<Badge tone="gold"><Icon name="shield-check" className="h-3 w-3" />Fidelity 94%</Badge>} />
+          <div className="space-y-3">
+            {service.getSummary().map((row) => (
+              <div key={row.label} className="rounded-xl border border-slate-200 p-3.5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+                  <div className="flex items-center gap-2 sm:w-48 sm:shrink-0">
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${TONE_TILE[row.tone]}`}>
+                      <Icon name={row.icon} className="h-4 w-4" />
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{row.label}</span>
+                  </div>
+                  <p className="flex-1 text-[13px] leading-relaxed text-slate-700">{row.text}</p>
+                </div>
+                <div className="mt-2.5 flex sm:justify-end">
+                  <EvidenceLink id={row.evidenceId} page={row.page} label="Source" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <div className="space-y-6">
+          {show.changes && (
+            <Card className="p-5">
+              <SectionHeader title="What Changed?" icon="compare" sub={`${period.previous} → ${period.current}`}
+                right={<button onClick={() => navigate("/change")} className="btn btn-navy text-xs">
+                  <Icon name="compare" className="h-3.5 w-3.5" />View Change Analysis</button>} />
+              <div className="grid grid-cols-2 gap-3">
+                {CHANGE_PREVIEW.map((c) => (
+                  <div key={c.label} className="rounded-xl border border-slate-200 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-500">{c.label}</span>
+                      <DeltaChip delta={c.delta} goodWhenUp={c.goodWhenUp} />
+                    </div>
+                    <div className="mt-2 flex items-end justify-between gap-2">
+                      <div className="text-[13px] font-semibold text-navy-950">₹{c.prev} → ₹{c.curr} Cr</div>
+                      <MiniBars prev={c.prev} curr={c.curr} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {show.auditor && (
+            <Card className="p-5">
+              <SectionHeader title="AI Auditor — Verification" icon="shield"
+                right={<Link to="/auditor" className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+                  Open AI Auditor<Icon name="chevron-right" className="h-3.5 w-3.5" /></Link>} />
+              <AuditPanel audit={service.getAudit()} compact />
+            </Card>
+          )}
+
+          {show.statement && (
+            <Card className="p-5">
+              <SectionHeader title="Statement–Data Consistency" icon="message"
+                right={<Link to="/risk" className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+                  Open Risk Intelligence<Icon name="chevron-right" className="h-3.5 w-3.5" /></Link>} />
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+                <p className="text-sm font-semibold italic text-navy-900">{sc.statement}</p>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                  {sc.rows.map(([k, v]) => <span key={k}>{k}: <b className="text-navy-950">{v}</b></span>)}
+                </div>
+                <div className="mt-2.5 flex items-center justify-between gap-2">
+                  <Badge tone="medium">{sc.verdict}</Badge>
+                  <EvidenceLink id={sc.evidenceId} label="Evidence" />
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {show.trends && (
+        <Card className="mt-6 p-5">
+          <SectionHeader title="Six-Quarter Trend" icon="trending-up"
+            sub="Revenue, net profit and debt — full observation window"
+            right={<Link to="/change" className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+              Change Intelligence<Icon name="chevron-right" className="h-3.5 w-3.5" /></Link>} />
+          <TrendChart history={HISTORY} />
+        </Card>
+      )}
+
+      {show.alerts && (
+        <div className="mt-6">
+          <SectionHeader title="Early-Warning Intelligence" icon="alert-triangle"
+            sub="Analytical alerts — this information may deserve analyst review. Not predictions, not recommendations."
+            right={<Link to="/risk" className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+              All alerts<Icon name="chevron-right" className="h-3.5 w-3.5" /></Link>} />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {alerts.map((a) => <AlertCard key={a.id} alert={a} onReview={() => openEvidence(a.evidenceId)} />)}
+          </div>
+        </div>
+      )}
+
+      {show.chain && (
+        <div className="mt-6">
+          <SectionHeader title="Risk Chain Preview" icon="share"
+            right={<Link to="/risk" className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+              Open Risk Intelligence<Icon name="chevron-right" className="h-3.5 w-3.5" /></Link>} />
+          <RiskGraph chains={service.getRiskChains()} selected={chainNode} onSelect={setChainNode} />
+        </div>
+      )}
+      {show.log && (
+        <Card className="mt-6 p-5">
+          <SectionHeader title="Latest Audit Activity" icon="list"
+            right={<Link to="/audit-log" className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+              Full audit log<Icon name="chevron-right" className="h-3.5 w-3.5" /></Link>} />
+          <div className="space-y-2">
+            {service.getAuditLog().slice(-3).reverse().map((l, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-slate-50 px-3 py-2 text-[13px]">
+                <span className="font-mono text-xs text-slate-400">{l.t}</span>
+                <span className="font-semibold text-navy-950">{l.agent}</span>
+                <span className="text-slate-600">{l.action}</span>
+                <span className={`ml-auto badge ${l.status === "flagged" ? "bg-rose-50 text-rose-700 border border-rose-200" : l.status === "warning" ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>{l.status.toUpperCase()}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+===== FILE: src/pages/Reports.jsx =====
+import { Link } from "react-router-dom";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader, EvidenceLink } from "../components/ui";
+import CompressionPanel from "../components/CompressionPanel";
+import { service } from "../services/analysisService";
+import { PIPELINE_STEPS } from "../data/mockData";
+
+export default function Reports() {
+  const reports = service.getReports();
+  return (
+    <div>
+      <PageHeader title="Reports" sub="Processed documents, compression intelligence and pipeline traces"
+        right={<Link to="/upload" className="btn btn-gold"><Icon name="upload" className="h-4 w-4" />New Analysis</Link>} />
+
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                {["Document", "Type", "Pages", "Tokens", "Compression", "Fidelity", "Signals", "Status", "Actions"].map((h) => (
+                  <th key={h} className="px-4 py-3 font-semibold">{h}</th>))}
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map((r) => (
+                <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                  <td className="px-4 py-3 font-semibold text-navy-950">{r.name}</td>
+                  <td className="px-4 py-3 text-slate-500">{r.type}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.pages}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.tokens}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.compression}</td>
+                  <td className="px-4 py-3 font-bold text-gold-700">{r.fidelity}%</td>
+                  <td className="px-4 py-3 font-bold text-navy-950">{r.signals}</td>
+                  <td className="px-4 py-3">
+                    <Badge tone={r.status === "Analysis Complete" ? "good" : "info"}>{r.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    {r.evidenceId ? <EvidenceLink id={r.evidenceId} label="Evidence" /> : <span className="text-xs text-slate-400">Archived</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="mt-6"><CompressionPanel /></div>
+
+      <Card className="mt-6 p-5">
+        <div className="mb-4 flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-900 text-gold-400"><Icon name="layers" className="h-5 w-5" /></span>
+          <div>
+            <h2 className="text-[15px] font-bold text-navy-950">Pipeline trace — Q2 FY2026 Financial Report</h2>
+            <p className="text-xs text-slate-500">All 11 stages completed · deterministic demo run</p>
+          </div>
+        </div>
+        <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+          {PIPELINE_STEPS.map((s, i) => (
+            <div key={s.label} className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <Icon name="check" className="h-3 w-3" strokeWidth={3} />
+              </span>
+              <div>
+                <div className="text-[13px] font-semibold text-navy-950">{i + 1}. {s.label}</div>
+                <div className="text-xs text-slate-500">{s.stat}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+===== FILE: src/pages/Signals.jsx =====
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Icon } from "../components/Icons";
+import { Card, PageHeader } from "../components/ui";
+import SignalCard from "../components/SignalCard";
+import { service } from "../services/analysisService";
+
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "risk", label: "Risk" },
+  { key: "positive", label: "Positive" },
+  { key: "info", label: "Informational" },
+];
+
+export default function Signals() {
+  const signals = service.getSignals();
+  const [filter, setFilter] = useState("all");
+  const shown = filter === "all" ? signals : signals.filter((s) => s.category === filter);
+  const riskCount = signals.filter((s) => s.category === "risk").length;
+  const avgConf = Math.round(signals.reduce((a, s) => a + s.confidence, 0) / signals.length);
+
+  return (
+    <div>
+      <PageHeader title="Financial Signals"
+        sub="Significant signals detected by the compression + signal pipeline — each with confidence and evidence" />
+
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        {[["Significant signals", signals.length, "zap"],
+          ["Risk-direction", riskCount, "alert-triangle"],
+          ["Average confidence", `${avgConf}%`, "target"]].map(([l, v, icon]) => (
+          <Card key={l} className="flex items-center gap-3 p-4">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy-50 text-navy-700"><Icon name={icon} className="h-5 w-5" /></span>
+            <div><div className="text-xl font-bold text-navy-950">{v}</div><div className="label">{l}</div></div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {FILTERS.map((f) => (
+          <button key={f.key} onClick={() => setFilter(f.key)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              filter === f.key ? "bg-navy-900 text-white" : "border border-slate-300 bg-white text-slate-600 hover:border-navy-300"}`}>
+            {f.label} <span className="opacity-60">({f.key === "all" ? signals.length : signals.filter((s) => s.category === f.key).length})</span>
+          </button>
+        ))}
+        <Link to="/risk" className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-navy-700 hover:text-gold-600">
+          See how signals connect<Icon name="chevron-right" className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {shown.map((s) => <SignalCard key={s.id} signal={s} />)}
+      </div>
+
+      <Card className="mt-6 border-l-4 border-l-gold-500 p-4">
+        <div className="flex items-start gap-3">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-gold-600" />
+          <p className="text-[13px] leading-relaxed text-slate-600">
+            Signals are analytical observations ranked by model confidence. They mark what <b>may deserve review</b> —
+            they are not predictions, ratings, or recommendations.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+===== FILE: src/pages/ChangeIntelligence.jsx =====
+import { useState } from "react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
+import { Icon } from "../components/Icons";
+import { Badge, Card, DeltaChip, PageHeader, SectionHeader, EvidenceLink } from "../components/ui";
+import { ComparisonChart } from "../components/ComparisonChart";
+import { service } from "../services/analysisService";
+import { HISTORY } from "../data/mockData";
+import { pctChange, isMaterial, classify } from "../utils/analysis";
+
+const TIP = { background: "#fff", border: "1px solid #E2E8F0", borderRadius: "10px", fontSize: "12px" };
+
+export default function ChangeIntelligence() {
+  const changes = service.getChanges();
+  const [sel, setSel] = useState("revenue");
+  const c = changes.find((x) => x.key === sel);
+  const d = pctChange(c.prev, c.curr);
+  const cls = classify(d, c.unit !== "Cr" ? true : c.label !== "Debt" && c.label !== "Expenses");
+  const abs = c.curr - c.prev;
+  const fmtAbs = c.unit === "Cr" ? `₹${abs > 0 ? "+" : "-"}${Math.abs(abs)} Cr` : `₹${abs > 0 ? "+" : "-"}${Math.abs(abs).toFixed(2)}`;
+  const barData = changes.filter((x) => x.unit === "Cr").map((x) => ({ name: x.label, Q1: x.prev, Q2: x.curr }));
+  const flags = changes.filter((x) => isMaterial(pctChange(x.prev, x.curr)));
+  const epsData = HISTORY.labels.map((q, i) => ({ q, EPS: HISTORY.eps[i] }));
+
+  return (
+    <div>
+      <PageHeader title="What Changed?" sub="Q1 FY2026 → Q2 FY2026 · materiality threshold ±15% · every change carries an explanation and evidence" />
+
+      <div className="grid gap-6 xl:grid-cols-[1fr,320px]">
+        <div className="space-y-6">
+          <Card className="p-5">
+            <SectionHeader title="Q1 vs Q2 — headline metrics" icon="compare" sub="₹ Cr · grouped comparison" />
+            <ComparisonChart data={barData} />
+          </Card>
+
+          <Card className="p-5">
+            <SectionHeader title={`Change Analysis — ${c.label}`} icon="target"
+              right={<EvidenceLink id={c.evidenceId} label="Evidence" />} />
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {[["Previous Value", `₹${c.prev} ${c.unit === "Cr" ? "Cr" : ""}`],
+                ["Current Value", `₹${c.curr} ${c.unit === "Cr" ? "Cr" : ""}`],
+                ["Absolute Change", fmtAbs],
+                ["Percentage Change", `${d > 0 ? "+" : ""}${d}%`]].map(([k, v]) => (
+                <div key={k} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-center">
+                  <div className="text-lg font-bold text-navy-950">{v}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{k}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-xl border border-navy-100 bg-navy-50 p-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-navy-800">
+                <Icon name="cpu" className="h-4 w-4 text-gold-600" />Possible Explanation
+              </div>
+              <p className="mt-1.5 text-sm leading-relaxed text-navy-900">{c.explanation}</p>
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <Badge tone={cls.tone}>
+                <Icon name={cls.up ? "arrow-up" : "arrow-down"} className="h-3 w-3" />
+                {cls.good ? "Favourable direction" : "Adverse direction"}
+              </Badge>
+              <span className="text-[11px] text-slate-400">Deterministic comparison — no model inference</span>
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <SectionHeader title="EPS trend" icon="trending-down" sub="₹12.50 → ₹9.80 (−21.6%) — tracked separately due to scale" />
+            <div style={{ height: 200 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={epsData} margin={{ top: 6, right: 6, bottom: 0, left: -14 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EEF1F5" />
+                  <XAxis dataKey="q" tick={{ fontSize: 11, fill: "#475569" }} tickLine={false} axisLine={{ stroke: "#CBD5E1" }} />
+                  <YAxis domain={["dataMin - 1", "dataMax + 1"]} tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={TIP} />
+                  <Line type="monotone" dataKey="EPS" stroke="#3A5CA0" strokeWidth={2.5} dot={{ r: 3, fill: "#3A5CA0", strokeWidth: 0 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="p-5">
+            <div className="label mb-3">Metrics</div>
+            <div className="space-y-2">
+              {changes.map((x) => {
+                const p = pctChange(x.prev, x.curr);
+                const active = x.key === sel;
+                return (
+                  <button key={x.key} onClick={() => setSel(x.key)}
+                    className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left transition ${
+                      active ? "border-gold-400 bg-gold-50/60 shadow-sm" : "border-slate-200 hover:border-navy-300"}`}>
+                    <span className={`text-[13px] font-semibold ${active ? "text-navy-950" : "text-slate-700"}`}>{x.label}</span>
+                    <span className="flex items-center gap-2">
+                      {isMaterial(p) && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" title="Exceeds ±15%" />}
+                      <DeltaChip delta={p} goodWhenUp={x.key !== "debt" && x.key !== "expenses"} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="label mb-2">Materiality flags ({flags.length})</div>
+            <p className="text-xs leading-relaxed text-slate-500">
+              Metrics moving more than ±15% QoQ are auto-flagged for review. The red dot marks flagged metrics in the list.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {flags.map((f) => (
+                <span key={f.key} className="badge border border-rose-200 bg-rose-50 text-rose-700">{f.label}</span>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/RiskIntelligence.jsx =====
+import { useState } from "react";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader, SectionHeader, EvidenceLink } from "../components/ui";
+import RiskGraph from "../components/RiskGraph";
+import AlertCard from "../components/AlertCard";
+import { useAppState } from "../hooks/useAppState";
+import { service } from "../services/analysisService";
+
+const SEV = { amber: { tone: "medium", label: "Developing" }, rose: { tone: "high", label: "Elevated" }, slate: { tone: "info", label: "Context" } };
+
+export default function RiskIntelligence() {
+  const { openEvidence, watchlist, toggleWatch } = useAppState();
+  const chains = service.getRiskChains();
+  const [node, setNode] = useState(chains[0].nodes[2]);
+  const chain = chains.find((ch) => ch.nodes.some((n) => n.id === node.id));
+  const sev = SEV[node.sev];
+
+  return (
+    <div>
+      <PageHeader title="Risk Intelligence"
+        sub="Connected risk chains, statement–data consistency and early-warning alerts — exposure pathways, not predictions" />
+
+      <SectionHeader title="Risk Chains" icon="share" sub="Click any node to inspect trigger, evidence and AI analysis" />
+      <div className="grid gap-5 xl:grid-cols-[1fr,330px]">
+        <RiskGraph chains={chains} selected={node} onSelect={setNode} />
+        <Card className="h-fit p-5 xl:sticky xl:top-24">
+          <div className="flex items-center justify-between gap-2">
+            <Badge tone="navy">{chain.id}</Badge>
+            <Badge tone={sev.tone}>{sev.label}</Badge>
+          </div>
+          <h3 className="mt-3 text-lg font-bold leading-snug text-navy-950">{node.title}</h3>
+          <div className="mt-1 text-xs text-slate-400">Impact level L{node.level} · {chain.name}</div>
+          <dl className="mt-4 space-y-3 text-[13px]">
+            {[["Trigger", node.trigger], ["AI Analysis", node.aiAnalysis], ["Source", node.source]].map(([k, v]) => (
+              <div key={k}>
+                <dt className="label">{k}</dt>
+                <dd className="mt-0.5 leading-relaxed text-slate-700">{v}</dd>
+              </div>
+            ))}
+            <div>
+              <dt className="label">Evidence</dt>
+              <dd className="mt-1"><EvidenceLink id={node.evidenceId} label="Review Evidence" /></dd>
+            </div>
+          </dl>
+          <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-relaxed text-slate-400">
+            Chain links are directional exposure pathways constructed from detected signals — they do not predict outcomes or allege wrongdoing.
+          </p>
+        </Card>
+      </div>
+
+      <div className="mt-8">
+        <SectionHeader title="Statement–Data Consistency" icon="message"
+          sub="What management said vs what the data shows — flagged for review, never judged" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          {service.getStatementChecks().map((sc) => (
+            <Card key={sc.id} className="flex flex-col p-5">
+              <div className="flex items-center justify-between">
+                <Badge tone={sc.status === "inconsistent" ? "medium" : "good"}>{sc.verdict}</Badge>
+                <span className="text-[11px] font-medium text-slate-400">{sc.id}</span>
+              </div>
+              <div className="mt-3 flex-1">
+                <div className="label">Management statement</div>
+                <p className="mt-1 text-sm font-semibold italic leading-snug text-navy-950">{sc.statement}</p>
+                <div className="mt-0.5 text-[11px] text-slate-400">{sc.speaker}</div>
+                <div className="my-3 border-t border-dashed border-slate-200" />
+                <div className="label">Reported financial data</div>
+                <div className="mt-1.5 space-y-1.5">
+                  {sc.rows.map(([k, v]) => (
+                    <div key={k} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-[13px]">
+                      <span className="text-slate-500">{k}</span>
+                      <span className="font-bold text-navy-950">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-slate-500">{sc.note}</p>
+              <div className="mt-3"><EvidenceLink id={sc.evidenceId} label="Evidence" /></div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <SectionHeader title="Early-Warning Intelligence" icon="alert-triangle"
+          sub="This information may deserve analyst review — analytical alerts only, no recommendations" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {service.getAlerts().map((a) => (
+            <AlertCard key={a.id} alert={a} onReview={() => openEvidence(a.evidenceId)}
+              watchlisted={watchlist.includes(a.id)} onToggleWatch={toggleWatch} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/Auditor.jsx =====
+import { useEffect, useState } from "react";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader, SectionHeader } from "../components/ui";
+import AuditPanel, { SignalScore } from "../components/AuditPanel";
+import { usePipeline } from "../hooks/usePipeline";
+import { service } from "../services/analysisService";
+import { AUDIT } from "../data/mockData";
+
+const CIRCLE = {
+  done: "border-gold-500 bg-gold-500 text-navy-950",
+  active: "border-navy-900 bg-white text-navy-900",
+  flag: "border-amber-400 bg-amber-50 text-amber-600",
+  skip: "border-slate-200 bg-slate-50 text-slate-400",
+  pending: "border-slate-200 bg-white text-slate-400",
+};
+
+function WorkflowList({ steps, descs, statuses, notes }) {
+  return (
+    <ol>
+      {steps.map((s, i) => {
+        const st = statuses[i];
+        return (
+          <li key={s} className="relative flex gap-3 pb-5 last:pb-0">
+            {i < steps.length - 1 && (
+              <span className={`absolute left-[13px] top-8 h-[calc(100%-24px)] w-px ${st === "done" ? "bg-gold-400" : "bg-slate-200"}`} />
+            )}
+            <span className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${CIRCLE[st]}`}>
+              {st === "done" ? <Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} />
+                : st === "active" ? <Icon name="refresh" className="h-3.5 w-3.5 animate-spin" />
+                : st === "flag" ? <Icon name="alert-triangle" className="h-3.5 w-3.5" />
+                : st === "skip" ? <Icon name="minus" className="h-3.5 w-3.5" />
+                : i + 1}
+            </span>
+            <div>
+              <div className="text-sm font-semibold text-navy-950">
+                {s}{notes[i] && <span className="ml-2 text-xs font-normal text-slate-500">{notes[i]}</span>}
+              </div>
+              <div className="text-xs text-slate-500">{descs[i]}</div>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+export default function Auditor() {
+  const audit = service.getAudit();
+  const [stage, setStage] = useState("passed");
+  const pipeline = usePipeline(AUDIT.workflow, { stepMs: 800 });
+
+  useEffect(() => { if (stage === "correcting") pipeline.start(); }, [stage]);
+  useEffect(() => { if (pipeline.done && stage === "correcting") setStage("corrected"); }, [pipeline.done, stage]);
+
+  const { workflow, workflowDesc, drift } = AUDIT;
+  let statuses, notes;
+  if (stage === "passed") {
+    statuses = ["done", "done", "done", "done", "done", "skip", "skip"];
+    notes = ["148 pages", "20,000 → 6,400 tokens", "14/15 aligned", "94%", "No mismatch — passed", "not required", "not required"];
+  } else if (stage === "drift") {
+    statuses = ["done", "done", "done", "done", "flag", "pending", "pending"];
+    notes = ["148 pages", "20,000 → 6,400 tokens", "11/15 aligned", "61%", "Mismatch detected", "queued", "queued"];
+  } else if (stage === "correcting") {
+    statuses = workflow.map((_, i) => pipeline.status(i));
+    notes = ["", "", "", "", "Mismatch → self-correction", "regenerating…", "pending"];
+  } else {
+    statuses = workflow.map(() => "done");
+    notes = ["148 pages", "20,000 → 6,400 tokens", "re-audited", "95%", "resolved", "applied", "95% · passed"];
+  }
+
+  const drifted = stage === "drift" || stage === "correcting";
+  const summaryText = stage === "passed" ? drift.faithfulSummary : drifted ? drift.driftedSummary : drift.faithfulSummary;
+  const auditorRuns = service.getAuditLog().filter((l) => l.agent === "Auditor Agent");
+
+  return (
+    <div>
+      <PageHeader title="AI Auditor" sub="Independent verification of compressed intelligence — the trust layer of FinSight X"
+        right={<Badge tone="navy"><Icon name="shield-check" className="h-3.5 w-3.5" />Independent agent</Badge>} />
+
+      <div className="grid gap-6 xl:grid-cols-[1fr,360px]">
+        <div className="space-y-6">
+          <Card className="p-5">
+            <SectionHeader title="Current audit — Q2 FY2026 compression" icon="shield"
+              sub="The auditor re-reads every source chunk and scores the summary point-by-point" />
+            <AuditPanel audit={audit} />
+          </Card>
+
+          <Card className="p-5">
+            <SectionHeader title="Self-correction demo" icon="refresh"
+              sub="Watch the auditor catch summary drift, self-correct, and re-audit" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <div className="label">Original report · p.27</div>
+                <p className="mt-1.5 text-[13px] italic leading-relaxed text-slate-700">“{drift.originalQuote}”</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <SignalScore value={drift.originalSignal} label="Source signal" compact />
+                  <span className="text-[11px] font-semibold text-emerald-600">direction: deteriorating</span>
+                </div>
+              </div>
+              <div className={`rounded-xl border p-4 ${drifted ? "border-rose-300 bg-rose-50/50" : "border-slate-200"}`}>
+                <div className="label">Compressed summary {drifted ? "· drifted" : "· faithful"}</div>
+                <p className="mt-1.5 text-[13px] italic leading-relaxed text-slate-700">“{summaryText}”</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <SignalScore value={drifted ? drift.summarySignal : audit.summarySignal} label="Summary signal" compact />
+                  {drifted
+                    ? <span className="text-[11px] font-semibold text-rose-600">direction inverted ⚠</span>
+                    : <span className="text-[11px] font-semibold text-emerald-600">direction aligned ✓</span>}
+                </div>
+              </div>
+            </div>
+
+            {stage === "passed" && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-3.5">
+                <p className="text-[13px] text-slate-600">Everything aligned. Trigger a summary drift to see the audit layer respond.</p>
+                <button onClick={() => { pipeline.reset(); setStage("drift"); }} className="btn btn-outline text-xs">
+                  <Icon name="play" className="h-3.5 w-3.5" />Simulate Summary Drift
+                </button>
+              </div>
+            )}
+            {stage === "drift" && (
+              <div className="fade-up mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-center gap-2"><Badge tone="medium"><Icon name="alert-triangle" className="h-3.5 w-3.5" />⚠ MISMATCH DETECTED</Badge>
+                  <span className="text-xs text-slate-600">Fidelity dropped to {drift.fidelity}%</span></div>
+                <p className="mt-2 text-[13px] leading-relaxed text-slate-700">{drift.driftNote}</p>
+                <button onClick={() => setStage("correcting")} className="btn btn-gold mt-3 text-xs">
+                  <Icon name="refresh" className="h-3.5 w-3.5" />Run Self-Correction
+                </button>
+              </div>
+            )}
+            {stage === "correcting" && (
+              <div className="fade-up mt-4 flex items-center gap-3 rounded-xl border border-navy-100 bg-navy-50 p-3.5 text-sm text-navy-900">
+                <Icon name="refresh" className="h-4 w-4 animate-spin text-gold-600" />
+                Self-correction running: regenerating the drifted summary from evidence, then re-auditing…
+              </div>
+            )}
+            {stage === "corrected" && (
+              <div className="fade-up mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <Badge tone="good"><Icon name="check-circle" className="h-3.5 w-3.5" />RE-AUDIT PASSED</Badge>
+                  <SignalScore value={drift.corrected.summarySignal} label="Corrected signal" compact />
+                  <span className="text-sm font-bold text-emerald-700">Fidelity {drift.corrected.fidelity}%</span>
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-slate-700">{drift.corrected.statement}</p>
+                <button onClick={() => { pipeline.reset(); setStage("passed"); }} className="btn btn-outline mt-3 text-xs">Reset Demo</button>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            <SectionHeader title="What the auditor checks" icon="list" />
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {["Signal direction preservation (source vs summary)",
+                "Magnitude within tolerance for each metric",
+                "Every claim traceable to a source page",
+                "No unsupported additions in the summary",
+                "Statement–data consistency signals preserved",
+                "Confidence scores recalibrated after edits"].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-[13px] text-slate-700">
+                  <Icon name="check-circle" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />{item}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="p-5">
+            <SectionHeader title="Audit workflow" icon="link"
+              sub={stage === "correcting" ? "Live — self-correction loop running" : "Verification loop for every compression run"} />
+            <WorkflowList steps={workflow} descs={workflowDesc} statuses={statuses} notes={notes} />
+          </Card>
+
+          <Card className="p-5">
+            <SectionHeader title="Recent audit runs" icon="clock" />
+            <div className="space-y-2">
+              {auditorRuns.map((l, i) => (
+                <div key={i} className="rounded-lg bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] font-semibold text-navy-950">{l.action}</span>
+                    <span className={`badge ${l.status === "ok" ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-amber-200 bg-amber-50 text-amber-700"}`}>{l.status.toUpperCase()}</span>
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-500">{l.detail} · {l.t}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/AskReport.jsx =====
+import { useEffect, useRef, useState } from "react";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader, EvidenceLink } from "../components/ui";
+import { service } from "../services/analysisService";
+
+export default function AskReport() {
+  const [messages, setMessages] = useState([
+    { role: "ai", greeting: true,
+      text: "Ask anything about the Q2 FY2026 report. Every answer is grounded in the processed documents with a source page — I don't generate unsupported information." },
+  ]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const threadRef = useRef(null);
+  const suggestions = service.getSuggestedQuestions();
+
+  useEffect(() => { threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" }); }, [messages, thinking]);
+
+  const send = (q) => {
+    const question = (q ?? input).trim();
+    if (!question || thinking) return;
+    setInput("");
+    setMessages((m) => [...m, { role: "user", text: question }]);
+    setThinking(true);
+    setTimeout(() => {
+      setMessages((m) => [...m, { role: "ai", answer: service.askReport(question) }]);
+      setThinking(false);
+    }, 750);
+  };
+
+  return (
+    <div>
+      <PageHeader title="Ask the Report"
+        sub="Grounded Q&A over the compressed corpus — every answer cites its source page" />
+      <div className="grid gap-6 lg:grid-cols-[1fr,320px]">
+        <Card className="flex h-[600px] flex-col">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-navy-900 text-gold-400"><Icon name="message" className="h-4 w-4" /></span>
+              <div><div className="text-sm font-bold text-navy-950">Report Q&A</div>
+                <div className="text-[11px] text-slate-400">Corpus: Q2 FY2026 Report + Earnings Call · 312 chunks</div></div>
+            </div>
+            <Badge tone="good">Grounded mode</Badge>
+          </div>
+
+          <div ref={threadRef} className="nice-scroll flex-1 space-y-4 overflow-y-auto p-5">
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="flex justify-end">
+                  <div className="fade-up max-w-[85%] rounded-2xl rounded-br-md bg-navy-900 px-4 py-2.5 text-sm text-white">{m.text}</div>
+                </div>
+              ) : m.greeting ? (
+                <div key={i} className="fade-up flex items-start gap-2.5">
+                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-500 text-navy-950"><Icon name="cpu" className="h-4 w-4" /></span>
+                  <div className="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">{m.text}</div>
+                </div>
+              ) : (
+                <div key={i} className="fade-up flex items-start gap-2.5">
+                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-500 text-navy-950"><Icon name="cpu" className="h-4 w-4" /></span>
+                  <div className="max-w-[88%] rounded-2xl rounded-tl-md border border-slate-200 p-4">
+                    <p className="text-sm font-semibold leading-relaxed text-navy-950">{m.answer.answer}</p>
+                    <div className="mt-3 space-y-2.5 border-t border-slate-100 pt-3">
+                      {[["REPORTED FACT", m.answer.fact], ["AI ANALYSIS", m.answer.analysis], ["POTENTIAL SIGNIFICANCE", m.answer.significance]].map(([k, v]) => (
+                        <div key={k}>
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{k}</div>
+                          <p className="text-[13px] leading-relaxed text-slate-700">{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                      <Badge tone="navy"><Icon name="file" className="h-3 w-3" />Source p.{m.answer.page}</Badge>
+                      <EvidenceLink id={m.answer.evidenceId} label="Open evidence" />
+                      <Badge tone={m.answer.grounded ? "good" : "medium"}>
+                        {m.answer.grounded ? "Grounded: yes" : "Grounded: no direct match"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+            {thinking && (
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-500 text-navy-950"><Icon name="cpu" className="h-4 w-4" /></span>
+                <span className="flex items-center gap-1 rounded-2xl rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3">
+                  {[0, 1, 2].map((d) => <span key={d} className="think-dot h-1.5 w-1.5 rounded-full bg-slate-500" style={{ animationDelay: `${d * 0.2}s` }} />)}
+                  <span className="ml-1.5 text-xs text-slate-500">Searching the report…</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-slate-200 p-4">
+            <div className="flex gap-2">
+              <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()}
+                placeholder="Ask about changes, signals, risks, statements…"
+                className="input flex-1" />
+              <button onClick={() => send()} disabled={thinking} className="btn btn-navy disabled:opacity-50">
+                <Icon name="send" className="h-4 w-4" />Ask
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        <div className="space-y-5">
+          <Card className="p-5">
+            <div className="label mb-3">Suggested questions</div>
+            <div className="space-y-2">
+              {suggestions.map((q) => (
+                <button key={q} onClick={() => send(q)}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-left text-[13px] font-medium text-slate-700 transition hover:border-gold-400 hover:bg-gold-50">
+                  {q}<Icon name="chevron-right" className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                </button>
+              ))}
+            </div>
+          </Card>
+          <Card className="p-5">
+            <div className="label mb-2">How answers are built</div>
+            <ol className="space-y-2 text-[13px] text-slate-600">
+              {["Retrieval over processed document chunks",
+                "Grounded generation — only cited content",
+                "Structured output: fact → analysis → significance",
+                "Source page and evidence attached to every answer"].map((s, i) => (
+                <li key={s} className="flex gap-2.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy-900 text-[10px] font-bold text-gold-400">{i + 1}</span>{s}
+                </li>
+              ))}
+            </ol>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/Evidence.jsx =====
+import { useState } from "react";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader } from "../components/ui";
+import { useAppState } from "../hooks/useAppState";
+import { EVIDENCE } from "../data/mockData";
+
+const DOCS = ["All documents", ...new Set(Object.values(EVIDENCE).map((e) => e.document))];
+
+export default function Evidence() {
+  const { openEvidence } = useAppState();
+  const [doc, setDoc] = useState("All documents");
+  const items = Object.values(EVIDENCE).filter((e) => doc === "All documents" || e.document === doc);
+
+  return (
+    <div>
+      <PageHeader title="Evidence"
+        sub="Every AI output on the platform is traceable — signals, alerts, audits and answers all cite these records"
+        right={
+          <select value={doc} onChange={(e) => setDoc(e.target.value)} className="input w-56 !py-1.5 text-[13px]">
+            {DOCS.map((d) => <option key={d}>{d}</option>)}
+          </select>
+        } />
+
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        {[["Evidence records", Object.keys(EVIDENCE).length, "clip"],
+          ["Source documents", DOCS.length - 1, "file"],
+          ["Outputs cited", "100%", "shield-check"]].map(([l, v, icon]) => (
+          <Card key={l} className="flex items-center gap-3 p-4">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy-50 text-navy-700"><Icon name={icon} className="h-5 w-5" /></span>
+            <div><div className="text-xl font-bold text-navy-950">{v}</div><div className="label">{l}</div></div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {items.map((e) => (
+          <Card key={e.id} className="card-hover flex flex-col p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gold-500/15 text-gold-700">
+                  <Icon name={e.type === "Transcript" ? "message" : e.type === "Cross-check" ? "compare" : "file"} className="h-[18px] w-[18px]" />
+                </span>
+                <div>
+                  <h3 className="text-[15px] font-bold leading-snug text-navy-950">{e.signal}</h3>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <Badge tone="navy">{e.document}</Badge>
+                    <Badge tone="gold">p.{e.page}</Badge>
+                    <Badge tone="info">{e.type}</Badge>
+                  </div>
+                </div>
+              </div>
+              <span className="text-[11px] font-medium text-slate-400">{e.id}</span>
+            </div>
+            <p className="mt-3 line-clamp-3 flex-1 text-[13px] italic leading-relaxed text-slate-600">“{e.quote}”</p>
+            <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500"><b className="text-slate-600">AI interpretation:</b> {e.interpretation}</p>
+            <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-3">
+              <span className="text-[11px] text-slate-400">Traceable record</span>
+              <button onClick={() => openEvidence(e.id)} className="btn btn-navy px-3 py-1.5 text-xs">
+                <Icon name="external" className="h-3.5 w-3.5" />Open Evidence
+              </button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/AuditLog.jsx =====
+import { useState } from "react";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader } from "../components/ui";
+import { service } from "../services/analysisService";
+
+const STATUS = {
+  ok: { tone: "good", label: "OK" },
+  flagged: { tone: "high", label: "FLAGGED" },
+  warning: { tone: "medium", label: "WARNING" },
+  info: { tone: "info", label: "INFO" },
+};
+
+export default function AuditLog() {
+  const log = service.getAuditLog();
+  const agents = ["All agents", ...new Set(log.map((l) => l.agent))];
+  const [agent, setAgent] = useState("All agents");
+  const rows = agent === "All agents" ? log : log.filter((l) => l.agent === agent);
+
+  return (
+    <div>
+      <PageHeader title="Audit Log"
+        sub="Immutable record of every agent action in the pipeline — full provenance for review"
+        right={
+          <select value={agent} onChange={(e) => setAgent(e.target.value)} className="input w-48 !py-1.5 text-[13px]">
+            {agents.map((a) => <option key={a}>{a}</option>)}
+          </select>
+        } />
+
+      <div className="grid gap-6 xl:grid-cols-[1fr,300px]">
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                  {["Time", "Agent", "Action", "Status", "Detail"].map((h) => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((l, i) => {
+                  const s = STATUS[l.status] || STATUS.info;
+                  return (
+                    <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-400">{l.t}</td>
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-navy-950">{l.agent}</td>
+                      <td className="px-4 py-3 text-slate-700">{l.action}</td>
+                      <td className="px-4 py-3"><Badge tone={s.tone}>{s.label}</Badge></td>
+                      <td className="px-4 py-3 text-xs text-slate-500">{l.detail}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <div className="space-y-5">
+          <Card className="p-5">
+            <div className="label mb-2">Log integrity</div>
+            <ul className="space-y-2.5 text-[13px] text-slate-600">
+              {["Append-only — entries cannot be edited", "Hash-chained records (demo)", "Retained for 7 years", "Exportable for regulatory review"].map((t) => (
+                <li key={t} className="flex items-start gap-2">
+                  <Icon name="check-circle" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />{t}
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <Card className="p-5">
+            <div className="label mb-2">Status legend</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(STATUS).map(([k, v]) => <Badge key={k} tone={v.tone}>{v.label}</Badge>)}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/Settings.jsx =====
+import { useState } from "react";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader, SectionHeader } from "../components/ui";
+import { useAppState } from "../hooks/useAppState";
+import { ROLES, COMPRESSION_LEVELS, DISCLAIMER } from "../data/mockData";
+
+function Toggle({ checked, onChange, label, sub }) {
+  return (
+    <button onClick={() => onChange(!checked)} className="flex w-full items-center justify-between gap-4 rounded-lg border border-slate-200 p-3 text-left hover:border-slate-300">
+      <div><div className="text-sm font-semibold text-navy-950">{label}</div><div className="text-xs text-slate-500">{sub}</div></div>
+      <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-gold-500" : "bg-slate-300"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? "left-[22px]" : "left-0.5"}`} />
+      </span>
+    </button>
+  );
+}
+
+export default function Settings() {
+  const { role, setRole, compressionLevel, setCompressionLevel } = useAppState();
+  const [threshold, setThreshold] = useState(15);
+  const [notif, setNotif] = useState(true);
+  const [autoEvidence, setAutoEvidence] = useState(false);
+
+  return (
+    <div>
+      <PageHeader title="Settings" sub="Workspace, analysis and compliance preferences" />
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="p-5">
+          <SectionHeader title="Role & dashboard focus" icon="user" sub="Switch the demo persona — the dashboard re-composes around it" />
+          <div className="space-y-3">
+            {Object.values(ROLES).map((r) => (
+              <button key={r.key} onClick={() => setRole(r.key)}
+                className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                  role === r.key ? "border-gold-400 bg-gold-50/50 ring-2 ring-gold-500/20" : "border-slate-200 hover:border-navy-300"}`}>
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${role === r.key ? "bg-gold-500 text-navy-950" : "bg-navy-50 text-navy-700"}`}>
+                  <Icon name={r.icon} className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-bold text-navy-950">{r.label}
+                    {role === r.key && <Badge tone="gold"><Icon name="check" className="h-3 w-3" strokeWidth={3} />Active</Badge>}</span>
+                  <span className="mt-1 flex flex-wrap gap-1.5">
+                    {r.focus.map((f) => <span key={f} className="badge bg-slate-100 text-slate-600 border border-slate-200">{f}</span>)}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Card>
+
+        <div className="space-y-6">
+          <Card className="p-5">
+            <SectionHeader title="Analysis preferences" icon="cpu" />
+            <div className="label mb-2">Default compression level</div>
+            <div className="grid grid-cols-3 gap-2">
+              {COMPRESSION_LEVELS.map((l) => (
+                <button key={l.id} onClick={() => setCompressionLevel(l.id)}
+                  className={`rounded-lg border px-3 py-2.5 text-center transition ${
+                    compressionLevel === l.id ? "border-gold-400 bg-gold-50/60" : "border-slate-200 hover:border-navy-300"}`}>
+                  <div className="text-sm font-bold text-navy-950">{l.label.replace(" Compression", "")}</div>
+                  <div className="text-[11px] text-slate-500">fidelity {l.fidelity}%</div>
+                </button>
+              ))}
+            </div>
+            <div className="mt-5">
+              <div className="flex items-center justify-between">
+                <div className="label">Change materiality threshold</div>
+                <span className="text-sm font-bold text-navy-950">±{threshold}%</span>
+              </div>
+              <input type="range" min="5" max="50" value={threshold} onChange={(e) => setThreshold(+e.target.value)}
+                className="mt-2 w-full accent-gold-600" />
+              <p className="mt-1 text-[11px] text-slate-400">Metrics moving more than this QoQ are auto-flagged in Change Intelligence.</p>
+            </div>
+            <div className="mt-5 space-y-2.5">
+              <Toggle checked={notif} onChange={setNotif} label="High-priority notifications" sub="Bell alerts for HIGH-priority early warnings" />
+              <Toggle checked={autoEvidence} onChange={setAutoEvidence} label="Auto-open evidence drawer" sub="Open the evidence panel when clicking any source chip" />
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <SectionHeader title="Data & models" icon="database" />
+            <div className="space-y-2.5 text-[13px]">
+              {[["Compression model", "FinSight-Compress v2.1 (demo)"], ["Auditor agent", "Independent verifier v1.4 (demo)"],
+                ["Mode", "Deterministic — no live LLM calls"], ["Corpus", "2 documents · 29,800 tokens · 312 chunks"]].map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">{k}</span><span className="font-semibold text-navy-950">{v}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="border-l-4 border-l-gold-500 p-5">
+            <SectionHeader title="Compliance" icon="shield" right={<Badge tone="gold">Pinned to every screen</Badge>} />
+            <p className="text-[13px] leading-relaxed text-slate-600">{DISCLAIMER}</p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+===== FILE: src/pages/Upload.jsx =====
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Icon } from "../components/Icons";
+import { Badge, Card, PageHeader } from "../components/ui";
+import PipelineFlow from "../components/PipelineFlow";
+import { usePipeline } from "../hooks/usePipeline";
+import { PIPELINE_STEPS } from "../data/mockData";
+
+const STORY = ["Upload", "Understand", "Compress", "Analyze", "Audit", "Detect", "Connect", "Alert", "Visualize", "Evidence"];
+
+export default function Upload() {
+  const pipeline = usePipeline(PIPELINE_STEPS, { stepMs: 850 });
+  const fileRef = useRef(null);
+  const [fileName, setFileName] = useState(null);
+  const started = pipeline.active >= 0;
+
+  const begin = (name) => { setFileName(name); pipeline.reset(); setTimeout(pipeline.start, 60); };
+
+  return (
+    <div>
+      <PageHeader title="New Analysis" sub="Report upload workflow — from raw document to visual, evidence-backed intelligence" />
+
+      <div className="grid gap-6 xl:grid-cols-[1fr,340px]">
+        <div className="space-y-6">
+          <Card className="p-5">
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); begin(e.dataTransfer.files?.[0]?.name || "Q2_FY2026_Financial_Report.pdf"); }}
+              className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/60 p-8 text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-navy-900 text-gold-400"><Icon name="upload" className="h-6 w-6" /></span>
+              <h3 className="mt-3 text-[15px] font-bold text-navy-950">Upload a document</h3>
+              <p className="mx-auto mt-1 max-w-md text-[13px] text-slate-500">
+                PDF financial report, earnings-call transcript or financial disclosure. Drag &amp; drop, or use the buttons below.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <button onClick={() => fileRef.current.click()} className="btn btn-gold"><Icon name="upload" className="h-4 w-4" />Choose File</button>
+                <button onClick={() => begin("Q2_FY2026_Financial_Report.pdf (demo bundle)")} className="btn btn-outline"><Icon name="play" className="h-4 w-4" />Load Demo Bundle</button>
+              </div>
+              <input ref={fileRef} type="file" className="hidden" accept=".pdf,.txt,.docx,.html"
+                onChange={(e) => begin(e.target.files?.[0]?.name || "Q2_FY2026_Financial_Report.pdf")} />
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-400">
+                {["PDF", "Earnings Call Transcript", "Financial Disclosure"].map((t) => <Badge key={t} tone="info">{t}</Badge>)}
+              </div>
+            </div>
+          </Card>
+
+          {started && (
+            <Card className="fade-up p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-[15px] font-bold text-navy-950">Processing pipeline</h3>
+                  <p className="text-xs text-slate-500">{fileName}</p>
+                </div>
+                {pipeline.done
+                  ? <Badge tone="good"><Icon name="check-circle" className="h-3.5 w-3.5" />Pipeline complete</Badge>
+                  : <Badge tone="gold"><Icon name="refresh" className="h-3.5 w-3.5 animate-spin" />Processing…</Badge>}
+              </div>
+              <ol>
+                {PIPELINE_STEPS.map((s, i) => {
+                  const st = pipeline.status(i);
+                  return (
+                    <li key={s.label} className="relative flex gap-3 pb-5 last:pb-0">
+                      {i < PIPELINE_STEPS.length - 1 && (
+                        <span className={`absolute left-[13px] top-8 h-[calc(100%-24px)] w-px ${st === "done" ? "bg-gold-400" : "bg-slate-200"}`} />
+                      )}
+                      <span className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${
+                        st === "done" ? "border-gold-500 bg-gold-500 text-navy-950"
+                        : st === "active" ? "border-navy-900 bg-white text-navy-900"
+                        : "border-slate-200 bg-white text-slate-400"}`}>
+                        {st === "done" ? <Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} />
+                          : st === "active" ? <Icon name="refresh" className="h-3.5 w-3.5 animate-spin" />
+                          : i + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-navy-950">{s.label}</div>
+                        <div className="text-xs text-slate-500">{s.desc}</div>
+                        {st === "done" && <div className="mt-1 inline-block rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">{s.stat}</div>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+              {pipeline.done && (
+                <div className="fade-up mt-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-semibold text-emerald-800">Analysis complete — dashboard, alerts, risk chains and evidence are updated.</p>
+                  <Link to="/dashboard" className="btn btn-gold text-xs"><Icon name="grid" className="h-3.5 w-3.5" />Open Dashboard</Link>
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+
+        <div className="space-y-5">
+          <Card className="p-5">
+            <div className="label mb-2">Document</div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+              <div className="truncate text-[13px] font-semibold text-navy-950">{fileName || "No file loaded"}</div>
+              <div className="mt-0.5 text-[11px] text-slate-500">{fileName ? "PDF · 4.2 MB · 148 pages" : "Load a file or the demo bundle to begin"}</div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {[["Tokens in", "20,000", pipeline.active > 4], ["Tokens out", "6,400", pipeline.active > 4],
+                ["Signals", "7", pipeline.active > 5], ["Fidelity", "94%", pipeline.active > 8]].map(([k, v, on]) => (
+                <div key={k} className={`rounded-lg border px-3 py-2.5 text-center ${on ? "border-slate-200 bg-white" : "border-dashed border-slate-200 bg-slate-50 opacity-50"}`}>
+                  <div className="text-base font-bold text-navy-950">{v}</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{k}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => fileName && begin(fileName)} disabled={!fileName}
+              className="btn btn-outline mt-4 w-full text-xs disabled:opacity-40">
+              <Icon name="refresh" className="h-3.5 w-3.5" />Run Again
+            </button>
+          </Card>
+
+          <Card className="p-5">
+            <div className="label mb-3">The product story</div>
+            <PipelineFlow steps={STORY} current={STORY.length} />
+            <p className="mt-4 text-[12px] leading-relaxed text-slate-500">
+              FinSight X uses GenAI and LLMs to compress large financial information, independently audit the compressed
+              intelligence, detect important changes and potential risks, and transform the results into visual,
+              evidence-backed early-warning intelligence for analysts.
+            </p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
